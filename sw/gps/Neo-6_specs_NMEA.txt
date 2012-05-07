@@ -1,0 +1,235 @@
+// Neo-6 GPS                                                                                                                                                   
+	Reference: 	- http://www.u-blox.com/images/downloads/Product_Docs/u-blox6_ReceiverDescriptionProtocolSpec_%28GPS.G6-SW-10018%29.pdf, Page 49-65
+			- http://www.gpsinformation.org/dale/nmea.htm
+
+// Sentences                                                                                                                                                   
+	NMEA 0183 v2.3
+	Default output: GGA, GLL, GSA, GSV, RMC, VTG, TXT
+	Input: GPQ
+	
+	Real data from U-Blox Neo-6M GPS module over Arduino serial.
+
+// GGA                                                                         
+	Description: 	Global positioning system fix data
+	Type:		Output
+	Comment:
+	
+	Structure:	$GPGGA,	hhmmss.ss,	Latitude,	N,	Longitude,	E,	FS,	NoSV,	HDOP,	msl,	uMsl,	Altref,	uSep,	DiffAge,	DiffStation	cs	   <CR><LF>	
+	Example:	$GPGGA,	092725.00,	4717.11399,	N,	00833.91590,	E,	1,	8,	1.01,	499.6,	M,	48.0,	M,	,		0		*5B
+	Real:		$GPGGA,	190428.00,	4604.81231,	N,	01429.42196,	E,	2,	05,	9.66,	328.4,	M,	42.9,	M,	,		0000		*5E
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$GPGGA 		 string 	$GPGGA 		- 	Message ID, GGA protocol header
+	1 	092725.00 	 hhmmss.sss 	hhmmss.ss 	- 	UTC Time, Current time
+	2 	4717.11399 	 ddmm.mmmm 	Latitude 	- 	Latitude, Degrees + minutes, dd° mm',mmmm
+	3 	N 		 character 	N 		- 	N/S Indicator, N=north or S=south
+	4 	00833.91590  	 dddmm.mmmm	Longitude	- 	Longitude, Degrees + minutes, dd° mm',mmmm
+	5 	E 		 character 	E 		- 	E/W indicator, E=east or W=west
+	6 	1 		 digit 		FS 		- 	Position Fix Status Indicator:  0 = No fix / Invalid
+													1 = Standard GPS (2D/3D)
+													2 = DGPS - differential GPS
+													6 = DR - Estimated (dead reckoning) fix
+	7 	8 		 numeric 	NoSV 		- 	Satellites Used, Range 0 to 12
+	8 	1.01 		 numeric 	HDOP 		- 	HDOP, Horizontal Dilution of Precision
+	9 	499.6 		 numeric 	msl 		m 	MSL Altitude (Mean Sea Level altitude)
+	10 	M 		 character 	uMsl 		- 	Units, Meters (fixed field)
+	11 	48.0 		 numeric 	Altref 		m 	Geoid Separation (Height of geoid above WGS84 ellipsoid)
+	12 	M 		 character 	uSep 		- 	Units, Meters (fixed field)
+	13 	- 		 numeric 	DiffAge 	s 	DGPS - Age of Differential Corrections, Blank (Null) fields when DGPS is not used
+	14 	0 		 numeric 	DiffStation	- 	DGPS - Diff. Reference Station ID
+	15 	*5B 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	16 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed (CR - 0d13/0x0D, LF - 0d10/0x0A)
+	
+	
+// GLL                                                                         
+	Description: 	Latitude and longitude, with time of position fix and status
+	Type:		Output
+	Comment:
+	
+	Structure:	$GPGLL,	Latitude,	N,	Longitude,	E,	hhmmss.ss,	Valid,	Mode	*cs	<CR><LF>	
+	Example:	$GPGLL,	4717.11364,	N,	00833.91565,	E,	092321.00,	A,	A	*60
+	Real*:		$GGLL,	604.117,	N,	0129.4361,	,	19013.00	A,	D	*5
+	    *: also $PGLL, $PGL, $GGLL 	(strange behaviour)
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$GPGLL 		 string 	$GPGLL 		- 	Message ID, GLL protocol header
+	1 	4717.11364 	 ddmm.mmmm 	Latitude 	- 	Latitude, Degrees + minutes, dd° mm',mmmm
+	2 	N 		 character 	N 		- 	N/S Indicator, hemisphere N=north or S=south
+	3 	00833.91565  	 dddmm.mmmm 	Longitude 	- 	Longitude, Degrees + minutes, dd° mm',mmmm
+	4 	E 		 character 	E 		- 	E/W indicator, E=east or W=west
+	5 	092321.00 	 hhmmss.sss 	hhmmss.ss 	- 	UTC Time, Current time
+	6 	A 		 character 	Valid 		- 	V = Data invalid or receiver warning, A = Data valid
+	7	A 		 character 	Mode 		- 	Positioning Mode:	N = No fix	
+												A = Autonomous fix 		(valid)
+												D = Differential fix	(valid)
+												E = Estimated/Dead reckoning fix
+	8 	*60 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	9 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed (CR - 0d13/0x0D, LF - 0d10/0x0A)
+	
+	
+// GSA                                                                         
+	Description: 	GNSS DOP and Active Satellites
+	Type:		Output
+	Comment:	- If less than 12 SVs are used for navigation, the remaining fields are left empty. If more
+			  than 12 SVs are used for navigation, only the IDs of the first 12 are output.
+			- The SV Numbers (Fields 'Sv') are in the range of 1 to 32 for GPS satellites, and 33 to 64
+			  for SBAS satellites (33 = SBAS PRN 120, 34 = SBAS PRN 121, and so on)
+	
+	Structure:	$GPGSA,	Smode,	FS,	{sv},				PDOP,	HDOP,	VDOP	*cs	<CR><LF>	
+	Example:	$GPGSA, A,	3,	23,29,07,08,09,18,26,28,,,,,	1.94,	1.18,	1.54	*0D
+	Real:		$GPGSA, A,	3,	26,02,05,07,08,,,,,,,,		14.56,	9.66,	10.89	*01
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$GPGSA 		 string 	$GPGSA 		- 	Message ID, GSA protocol header
+	1 	A 		 character 	Smode 		- 	Smode:   A = Auto selection of 2D or 3D mode
+										 M = Forced to operate in 2D or 3D mode
+	2 	3 		 digit 		FS 		- 	Fix status:   	0 = no fix
+										  	1 = 2D fix
+										  	2 = 3D fix
+	3+N 	29 		 numeric 	sv 		- 	Satellite number
+	15 	1.94 		 numeric 	PDOP 		- 	PDOP - Position dilution of precision
+	16 	1.18 		 numeric 	HDOP 		- 	HDOP - Horizontal dilution of precision
+	17 	1.54 		 numeric 	VDOP 		- 	VDOP - Vertical dilution of precision
+	18 	*0D 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	19 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed (CR - 0d13/0x0D, LF - 0d10/0x0A)
+
+	
+// GSV                                                                         
+	Description: 	GNSS Satellites in View
+	Type:		Output
+	Comment:	Only four satellite details are transmitted in one message.
+	
+	Structure:	$GPGSV,	NoMsg,	MsgNo,	NoSv,	{sv,	elv,	az,	cno}	*cs	<CR><LF>
+	Example:	$GPGSV, 3,	1,	10,	23,	38,	230,	44,
+							29,	71,	156,	47,
+							07,	29,	116,	41,
+							08,	09,	081,	36	*7F
+			$GPGSV, 3,	2,	10,	10,	07,	189,	,
+							05,	05,	220,	,
+							09,	34,	274,	42,
+							18,	25,	309,	44	*72
+			$GPGSV, 3,	3,	10,	26,	82,	187,	47,
+							28,	43,	056,	46	*77
+
+	Real*:		$GPGSV, 3,	1,	12,	02,	15,	234,	43,
+							03,	03,	042,	25,
+							04,	01,	202,	,
+							05,	54,	292,	43	*72
+			$GPGSV, 3	2,	1,	06,	1,	03,	,
+							07,	7,	05,	24,
+							8,	86	209,	3,
+							10,	0,	17,	32	*6
+			$GGSV	3, 	3,	2,	13	24,	09,	30,
+							6,	29	287,	6,
+							33,	9,	21,	37,
+							7,	37,	70,		*1
+		*: Last header also PGSV, PGSV3 (3 is number of messages), GGSV	 (strange behaviour)
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$GPGSV 		 string 	$GPGSV 		- 	Message ID, GSV protocol header
+	1 	3 		 digit 		NoMsg 		- 	Number of messages, total number of GPGSV messages being output
+	2 	1 		 digit 		MsgNo 		- 	Number of this message
+	3 	10 		 numeric 	NoSv 		- 	Satellites in View
+	4 + 4*N 23 		 numeric 	sv 		- 	Satellite ID		N = 1-4 (depends on how many satellites are visible)
+	5 + 4*N 38 		 numeric 	elv 		degrees Elevation, range 0..90	
+	6 + 4*N 230 		 numeric 	az 		degrees Azimuth, range 0..359
+	7 + 4*N 44 		 numeric 	cno 		dBHz 	C/N0, range 0..99, null when not tracking
+	5..16 	*7F 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	6..16 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed (CR - 0d13/0x0D, LF - 0d10/0x0A)
+	
+	
+// RMC                                                                         
+	Description: 	Recommended Minimum data
+	Type:		Output
+	Comment:		
+	
+	Structure:	$GPRMC, hhmmss,		status,	latitude,	N,	longitude,	E,	spd,	cog,	ddmmyy,	mv,	mvE,	mode	*cs	<CR><LF>	
+	Example:	$GPRMC, 083559.00,	A,	4717.11437,	N,	00833.91522,	E,	0.004,	77.52,	091202,	,	,	A	*57
+	Real:		$GPRMC, 190428.00,	A,	4604.81231,	N,	01429.42196,	E,	2.349,	,	050112,	,	,	D	*71
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$GPRMC 		 string 	$GPRMC 		- 	Message ID, RMC protocol header
+	1 	083559.00 	 hhmmss.sss 	hhmmss.ss	- 	UTC Time, Time of position fix
+	2 	A 		 character 	Status 		- 	Status, V = Navigation receiver warning, A = Data valid
+	3 	4717.11437 	 ddmm.mmmm 	Latitude 	- 	Latitude, Degrees + minutes, dd° mm',mmmm
+	4 	N 		 character 	N 		- 	N/S Indicator, hemisphere N=north or S=south
+	5 	00833.91522 	 dddmm.mmmm 	Longitude	- 	Longitude, Degrees + minutes,  dd° mm',mmmm
+	6 	E 		 character 	E 		- 	E/W indicator, E=east or W=west
+	7 	0.004 		 numeric 	Spd 		knots	Speed over ground
+	8 	77.52 		 numeric 	Cog 		degrees Track angle in degrees (from true North)
+	9 	091202 		 ddmmyy 	date		- 	Date in day, month, year format
+	10 	- 		 numeric 	mv 		degrees Magnetic variation value, not being output by receiver
+	11 	- 		 character 	mvE 		- 	Magnetic variation E/W indicator, not being output by receiver
+	12 	A 		 character 	mode 		- 	Mode Indicator:   N = No fix	
+											  A = Autonomous fix 		(valid)
+											  D = Differential fix		(valid)
+											  E = Estimated/Dead reckoning fix 
+	13 	*57 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	14 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed
+	
+	
+// VTG                                                                         
+	Description: 	Course over ground and Ground speed
+	Type:		Output
+	Comment:		
+	
+	Structure:	$GPVTG,	cogt,	T,	cogm,	M,	sog,	N,	kph,	K,	mode	*cs	<CR><LF>	
+	Example:	$GPVTG,	77.52,	T,	,	M,	0.004,	N,	0.008,	K,	A	*06
+	Real:		$GPVTG, ,	T,	,	M,	2.349,	N,	4.351,	K,	D	*29
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$GPVTG 		 string 	$GPVTG 		- 	Message ID, VTG protocol header
+	1 	77.52 		 numeric 	cogt 		degrees	Course over ground (true)
+	2 	T 		 character 	T 		- 	Fixed field: true
+	3 	- 		 numeric 	cogm 		degrees	Course over ground (magnetic), not output
+	4 	M 		 character 	M 		- 	Fixed field: magnetic
+	5 	0.004 		 numeric 	sog 		knots	Speed over ground
+	6 	N 		 character 	N 		- 	Fixed field: knots
+	7 	0.008 		 numeric 	kph 		km/h	Speed over ground
+	8 	K 		 character 	K 		- 	Fixed field: kilometers per hour
+	9 	A 		 character 	mode 		- 	Mode Indicator:   N = No fix	
+											  A = Autonomous fix 		(valid)
+											  D = Differential fix		(valid)
+											  E = Estimated/Dead reckoning fix 
+	10 	*06 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	11 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed
+	
+	
+// TXT                                                                         
+	Description: 	Text Transmission
+	Type:		Output
+	Comment:		
+	
+	Structure:	$GPTXT,	xx,	yy,	zz,	ascii data			*cs	<CR><LF>	
+	Example:	$GPTXT,	01,	01,	02,	u-blox ag - www.u-blox.com	*50
+	Real:		
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$GPTXT 		 string 	$GPTXT 		- 	Message ID, TXT protocol header
+	1 	01 		 numeric 	xx 		- 	Total number of messages in this transmission, 01..99
+	2 	01 		 numeric 	yy 		- 	Message number in this transmission, range 01..xx
+	3 	02		 numeric 	zz 		- 	Text identifier, u-blox GPS receivers specify the severity of the message with this number:   
+													00 = ERROR
+													01 = WARNING
+													02 = NOTICE
+													07 = USER
+	4 	www.u-b... 	 string 	string 		- 	Any ASCII text
+	5 	*67 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	6 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed
+	
+	
+// GPQ                                                                         
+	Description: 	Poll message
+	Type:		Input
+	Comment:		
+	
+	Structure:	$xxGPQ,		sid	*cs	<CR><LF>	
+	Example:	$EIGPQ,		RMC	*3A
+	Real:		
+
+	No.	Example 	 Format 	Name 		Unit 	Description
+	0 	$EIGPQ 		 string 	$xxGPQ 		- 	Message ID, GPQ protocol header, xx = talker identifier
+	1 	RMC 		 string 	sid 		- 	NMEA sentence identifier
+	2 	*3A 		 hexadecimal 	cs 		- 	Checksum (exlusive OR between $ and * sign)
+	3 	- 		 character 	<CR><LF> 	- 	Carriage Return and Line Feed
+	
