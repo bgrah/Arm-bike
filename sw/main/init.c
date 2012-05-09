@@ -2,6 +2,12 @@
 // Author: Janez Puhan
 // Modified: Blaž Grah - 29.4.2012 
 
+/*
+    int clock_mhz = 60;       // MCU clk speed      [12,24,36,48,60] (MHz)
+  	int vpbdiv = cclk_4;      // fvpb divider       [cclk,cclk_2,cclk_4]
+	init(clock_mhz, vpbdiv);
+*/
+
 #include "init.h"
 
 // MAM, VPB and PLL initialisation

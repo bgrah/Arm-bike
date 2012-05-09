@@ -1,6 +1,63 @@
-#include "GLCD_driver.h"
-#include "ascii.h"
+// Date:   1.5.2012
+// Author: Blaž Grah
 
+// Driver for Nokia 5510 graphical LCD screen (84*48px)
+// Communication is made in software (bit-banging)
+// Must set output pins in GLCD_driver.h and set pin directions!
+
+/* 
+  set_pin_direction(0, (P0_4|P0_5|P0_6|P0_7|P0_13));
+    int Vop = 49;             // Sets Vop           [0-127] (def. 49 (0x31))  !!!
+    int tempC = 3;            // Sets temp coeff.   [0-3]   (def. 3)
+    int biasS = 3;            // Sets bias system   [0-7]   (def. 3)
+  GLCD_init(Vop, tempC, biasS);
+*/
+
+#include "GLCD_driver.h"
+#include "ascii.h"           // For ascii to 8x5 character conversion
+
+//=======================================================================
+//GLCD initialization function
+//input: no input is needed
+//return: no return value
+//function description:
+//this function initilization the LCD; reset and prepare the LCD to be 
+//used, and clear the LCD to clear of the unknown random value in DDRAM
+//=======================================================================
+
+/* Initializes PCD5544 controler */
+  // Input:       Vop      ... Sets Vop           [0-127] (def. 59 (0x3B))  !!! Read datasheet before change
+  //              tempC    ... Sets temp coeff.   [0-3]   (def. 0)
+  //              biasS    ... Sets bias system   [0-7]   (def. 3)
+  // Output:      none
+  // Description: LCD initialisation. Resets LCD, prepare the LCD with Vop, tempC, biasS parameters
+  //              and clears unknown values in LCD RAM.
+  // Important!:  Be carefull when setting parameters, check the datasheet!
+  // WCET:        Unknown
+  void GLCD_init(int Vop, int tempC, int biasS) 
+  {
+  	int delay;
+    
+    DC_H;     // D/C=0  Data
+    SCE_H;    // SSEL=1 Chip disabled
+  
+    RST_L;                                // Reset and wait a bit 
+    delay=50000; while(delay>0)delay--;
+    RST_H; 
+    delay=50000; while(delay>0)delay--;
+  
+    GLCD_write_command(function_set | sH);    // Active mode, horizontal, extended instructions 
+    GLCD_write_command(set_Vop | Vop);        // Sets voltage for LCD 
+    GLCD_write_command(bias_system | biasS);  // Sets bias system
+    GLCD_write_command(temp_cr | tempC);      // Sets temp. coefficient
+    GLCD_write_command(function_set);         // Active mode, horizontal, normal instructions
+    GLCD_write_command(display_cr | display_all_on);    // All display segments on 
+  
+    GLCD_clean_ddram();         // Clears LCD's RAM
+  
+    GLCD_write_command(display_cr | display_blank);     // All display segments off  
+    GLCD_write_command(display_cr | normal_mode);       // Normal display mode
+  }
 
 
 //===========================================================================
@@ -15,13 +72,13 @@ void SPI_write(char data)
   char i; 
   for (i=0;i<8;i++) 
   {
-    IO0CLR=P0_4;    // SCK=0
-    if (data&0x80)  IO0SET=P0_6;  // MOSI=1
-    else            IO0CLR=P0_6;  // MOSI=0
-    IO0SET=P0_4;    // SCK=1
+    SCK_L;    // SCK=0
+    if (data&0x80)  SDA_H;  // MOSI=1
+    else            SDA_L;  // MOSI=0
+    SCK_H;    // SCK=1
     data=data<<1;  
   }
-  IO0CLR=P0_4;      // SCK=0
+  SCK_L;      // SCK=0
 }
 
 //=======================================================================
@@ -33,20 +90,20 @@ void SPI_write(char data)
 //=======================================================================   
 void GLCD_write_command(char command) 
 {  
-  IO0CLR=P0_5;        // D/C=0  Command
-  IO0CLR=P0_7;        // SSEL=0 Chip enabled 
+  DC_L;        // D/C=0  Command
+  SCE_L;        // SSEL=0 Chip enabled 
   //SPI_write(command);
   char i; 
   for (i=0;i<8;i++) 
   {
-    IO0CLR=P0_4;    // SCK=0
-    if (command&0x80) IO0SET=P0_6;  // MOSI=1
-    else              IO0CLR=P0_6;  // MOSI=0
-    IO0SET=P0_4;    // SCK=1
+    SCK_L;    // SCK=0
+    if (command&0x80) SDA_H;  // MOSI=1
+    else              SDA_L;  // MOSI=0
+    SCK_H;    // SCK=1
     command=command<<1;  
   }
-  IO0CLR=P0_4;      // SCK=0
-  IO0SET=P0_7;      // SSEL=1 Chip disabled 
+  SCK_L;      // SCK=0
+  SCE_H;      // SSEL=1 Chip disabled 
 }
 
 //=======================================================================
@@ -59,19 +116,19 @@ void GLCD_write_command(char command)
 //=======================================================================
 void GLCD_write_data(char data) 
 {  
-  IO0SET=P0_5;        // D/C=1  Data
-  IO0CLR=P0_7;        // SSEL=0 Chip enabled 
+  DC_H;        // D/C=1  Data
+  SCE_L;        // SSEL=0 Chip enabled 
   char i; 
   for (i=0;i<8;i++) 
   {
-    IO0CLR=P0_4;    // SCK=0
-    if (data&0x80)  IO0SET=P0_6;  // MOSI=1
-    else            IO0CLR=P0_6;  // MOSI=0
-    IO0SET=P0_4;    // SCK=1
+    SCK_L;    // SCK=0
+    if (data&0x80)  SDA_H;  // MOSI=1
+    else            SDA_L;  // MOSI=0
+    SCK_H;    // SCK=1
     data=data<<1;  
   }
-  IO0CLR=P0_4;        // SCK=0 
-  IO0SET=P0_7;        // SSEL=1 Chip disabled   
+  SCK_L;        // SCK=0 
+  SCE_H;        // SSEL=1 Chip disabled   
 }
 //=======================================================================
 //GLCD gotoXY position function
@@ -84,29 +141,29 @@ void GLCD_gotoxy(char xloc, char yloc)
 {
   char i;
   char command;
-  IO0CLR=P0_5;        // D/C=0  Command
-  IO0CLR=P0_7;        // SSEL=0 Chip enabled 
+  DC_L;        // D/C=0  Command
+  SCE_L;        // SSEL=0 Chip enabled 
 
   command=0x40|(yloc&0x07);
   for (i=0;i<8;i++) 
   {
-    IO0CLR=P0_4;    // SCK=0
-    if (command&0x80) IO0SET=P0_6;  // MOSI=1
-    else              IO0CLR=P0_6;  // MOSI=0
-    IO0SET=P0_4;    // SCK=1
+    SCK_L;    // SCK=0
+    if (command&0x80) SDA_H;  // MOSI=1
+    else              SDA_L;  // MOSI=0
+    SCK_H;    // SCK=1
     command=command<<1;  
   }
   command=0x80|(xloc&0x7f);
   for (i=0;i<8;i++) 
   {
-    IO0CLR=P0_4;    // SCK=0
-    if (command&0x80) IO0SET=P0_6;  // MOSI=1
-    else              IO0CLR=P0_6;  // MOSI=0
-    IO0SET=P0_4;    // SCK=1
+    SCK_L;    // SCK=0
+    if (command&0x80) SDA_H;  // MOSI=1
+    else              SDA_L;  // MOSI=0
+    SCK_H;    // SCK=1
     command=command<<1;  
   }
-  IO0CLR=P0_4;      // SCK=0
-  IO0SET=P0_7;      // SSEL=1 Chip disabled
+  SCK_L;      // SCK=0
+  SCE_H;      // SSEL=1 Chip disabled
 }
 //=======================================================================
 //GLCD clear screen function
@@ -121,49 +178,18 @@ void GLCD_clean_ddram(void)
   char i;
   GLCD_gotoxy(0,0);   // 84*6=504      clear LCD
   
-  IO0SET=P0_5;        // D/C=1  Data
-  IO0CLR=P0_7;        // SSEL=0 Chip enabled
-  IO0CLR=P0_6;        // MOSI=0
+  DC_H;        // D/C=1  Data
+  SCE_L;        // SSEL=0 Chip enabled
+  SDA_L;        // MOSI=0
   for (ddram=0;ddram<504*8;ddram++)      // 84x6 8-bit cells
   {
-    IO0CLR=P0_4;      // SCK=0
-    IO0SET=P0_4;      // SCK=1 
+    SCK_L;      // SCK=0
+    SCK_H;      // SCK=1 
   }
-  IO0CLR=P0_4;        // SCK=0 
-  IO0SET=P0_7;        // SSEL=1 Chip disabled
+  SCK_L;        // SCK=0 
+  SCE_H;        // SSEL=1 Chip disabled
 }
-//=======================================================================
-//GLCD initialization function
-//input: no input is needed
-//return: no return value
-//function description:
-//this function initilization the LCD; reset and prepare the LCD to be 
-//used, and clear the LCD to clear of the unknown random value in DDRAM
-//=======================================================================
-void GLCD_init(void) 
-{
-	int delay;
-  
-  IO0SET=P0_5;                // ?? bytes are stored in the display data ram, address counter, incremented automatically
-  IO0SET=P0_7;                // chip disabled 
 
-  IO0CLR=P0_13;               // reset chip during 250ms 
-  delay=50000; while(delay>0)delay--;        // works with less..... 
-  IO0SET=P0_13; 
-  delay=50000; while(delay>0)delay--;
-
-  GLCD_write_command(0x21);   // set extins extended instruction set 
-  GLCD_write_command(0xbb);   // Vop  v1: 0xc8 (for 3V)// v2: 0xa0 (for 3V) // v3: 0xc2 (2v6-5v)   ******************************************************************************************************************** 
-  GLCD_write_command(0x13);   // bias 
-  GLCD_write_command(0x20);   // horizontal mode from left to right, X axe are incremented automatically , 0x22 for vertical addressing ,back on normal instruction set too 
-  GLCD_write_command(0x09);   // all on 
-
-  GLCD_clean_ddram();         // reset DDRAM, otherwise the lcd is blurred with random pixels 
-
-  GLCD_write_command(0x08);   // mod control blank change (all off) 
-  GLCD_write_command(0x0c);   // mod control normal change 
-	
-}
 //=======================================================================
 //GLCD Putchar function
 //input: one byte of ASCII, use single quote eg. 'A'
@@ -179,28 +205,28 @@ void GLCD_putc(char data)					// Write 1 character to LCD
 	unsigned char i,j;
 
 	locate=(data-32);
-  IO0SET=P0_5;        // D/C=1  Data
-  IO0CLR=P0_7;        // SSEL=0 Chip enabled 
+  DC_H;        // D/C=1  Data
+  SCE_L;        // SSEL=0 Chip enabled 
   for (i=0;i<5;i++)   // 8x5 font
  	{
     lcddata = asciicharacter[locate][i]; 
     for (j=0;j<8;j++) 
     {
-      IO0CLR=P0_4;    // SCK=0
-      if (lcddata&0x80)  IO0SET=P0_6;  // MOSI=1
-      else            IO0CLR=P0_6;  // MOSI=0
-      IO0SET=P0_4;    // SCK=1
+      SCK_L;    // SCK=0
+      if (lcddata&0x80)  SDA_H;  // MOSI=1
+      else                SDA_L;  // MOSI=0
+      SCK_H;    // SCK=1
       lcddata=lcddata<<1;  
     }
   }
-  IO0CLR=P0_6;  // MOSI=0
+  SDA_L;  // MOSI=0
   for (j=0;j<8;j++)             // One extra col. for space
   {
-    IO0CLR=P0_4;    // SCK=0          
-    IO0SET=P0_4;    // SCK=1  
+    SCK_L;    // SCK=0          
+    SCK_H;    // SCK=1  
   }
-  IO0CLR=P0_4;        // SCK=0 
-  IO0SET=P0_7;        // SSEL=1 Chip disabled
+  SCK_L;        // SCK=0 
+  SCE_H;        // SSEL=1 Chip disabled
 }
 //=======================================================================
 //GLCD putstring function
@@ -234,46 +260,46 @@ void GLCD_putgraphic(char locx, char locy, char xpixel, char ypixel, char* graph
 	char endpage=locy+ypixel;
   char data, command;
   
-  IO0CLR=P0_7;        // SSEL=0 Chip enabled
+  SCE_L;        // SSEL=0 Chip enabled
 	for(j=locy;j<endpage;j++)
 	{
-    IO0CLR=P0_5;      // D/C=0  Command
+    DC_L;      // D/C=0  Command
     command=0x40|(j&0x07);
     for (k=0;k<8;k++) 
     {
-      IO0CLR=P0_4;    // SCK=0
-      if (command&0x80) IO0SET=P0_6;  // MOSI=1
-      else              IO0CLR=P0_6;  // MOSI=0
-      IO0SET=P0_4;    // SCK=1
+      SCK_L;    // SCK=0
+      if (command&0x80) SDA_H;  // MOSI=1
+      else              SDA_L;  // MOSI=0
+      SCK_H;    // SCK=1
       command=command<<1;  
     }
     command=0x80|(locx&0x7f);
     for (k=0;k<8;k++) 
     {
-      IO0CLR=P0_4;    // SCK=0
-      if (command&0x80) IO0SET=P0_6;  // MOSI=1
-      else              IO0CLR=P0_6;  // MOSI=0
-      IO0SET=P0_4;    // SCK=1
+      SCK_L;    // SCK=0
+      if (command&0x80) SDA_H;  // MOSI=1
+      else              SDA_L;  // MOSI=0
+      SCK_H;    // SCK=1
       command=command<<1;  
     }
 
-    IO0SET=P0_5;        // D/C=1  Data
+    DC_H;        // D/C=1  Data
 		for (i=0; i<xpixel; i++)
     {
       //GLCD_write_data(*(graphic++));
       data=*(graphic++);
       for (k=0;k<8;k++) 
       {
-        IO0CLR=P0_4;    // SCK=0
-        if (data&0x80)  IO0SET=P0_6;  // MOSI=1
-        else            IO0CLR=P0_6;  // MOSI=0
-        IO0SET=P0_4;    // SCK=1
+        SCK_L;    // SCK=0
+        if (data&0x80)  SDA_H;  // MOSI=1
+        else            SDA_L;  // MOSI=0
+        SCK_H;    // SCK=1
         data=data<<1;  
       }
     }
 	}
-  IO0CLR=P0_4;        // SCK=0 
-  IO0SET=P0_7;        // SSEL=1 Chip disabled
+  SCK_L;        // SCK=0 
+  SCE_H;        // SSEL=1 Chip disabled
 }
 
 

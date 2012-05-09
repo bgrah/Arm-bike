@@ -1,6 +1,15 @@
 // Date:   15.2.2007
 // Author: Janez Puhan
 
+/*
+    int t_prescale = 0;
+    int t_match[4] = {0,0,0,0}; // prekinitev se naredi naslednji urin cikel, kasneje spreminjaš T1MR0
+    int control = 0;  // prekinitev in reset
+    int count = timer; 
+  timer1_init(t_prescale, t_match, control, count);    // Inicializacija timer1
+    T1TCR = counter_enable;
+*/
+    
 #include "timer.h"
 
 // Reset and configure timer0

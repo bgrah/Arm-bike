@@ -18,12 +18,13 @@ x_driver.h
 ----------
 
 ### Graphical LCD driver (`GLCD_driver.h/.c`)
-##### Done: 60%
+##### Done: 65%
 
-+ 1. 5.2012		Working LCD driver with bit-banging. Write_: data, command, string, graphic; clear RAM; gotoxy                    
-+ 2. 5.2012		Improved GLCD lib. -> from 14% to 50% better timing. Still 92ms for full screen. HW SPI!	
++ 1. 5. 2012		Working LCD driver with bit-banging. Write_: data, command, string, graphic; clear RAM; gotoxy                    
++ 2. 5. 2012		Improved code -> from 14% to 50% better timing. Still 92ms for full screen. HW SPI!
++ 9. 5. 2012		Commenting code.
 
 ### PWM LED driver (`pwm.h/.c`)
 ##### Done: 30%
 
-+ 7. 5.2012  	1 channel working. Need to incorporate Fvpb and set duyt-cycle functions into pwm.h. Free 1 more PWM channel!!                    
++ 7. 5. 2012  		1 channel working. Need to incorporate Fvpb and set duyt-cycle functions into pwm.h. Free 1 more PWM channel!!                    
