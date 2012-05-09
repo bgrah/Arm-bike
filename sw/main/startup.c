@@ -34,23 +34,13 @@ void start_up()
     int edge_control = 0;     // Double edge controlled [pwmselX, X=2,3,4,5,6]
   pwm_init(p_output, p_prescale, p_match, match_control, edge_control);
     PWMTCR = pwm_enable;
- 
-/* SPI0 Init */
-    int length = 8;           // Data lenght        [8, 9, 10, 11, 12, 13, 14, 15 or 16]
-    int mode = high_rising;   // CPOL and CPHA      [high_rising, high_falling, low_rising or low_falling]
-    int type = master;        // Device type        [master, slave]
-    int first = msb;          // First transferred  [lsb, msb]
-    int interrupt = 0;        // Interrupt enable   [0,1]
-    int div = 20;             // fvpb divider       [8 -> 254] (clk = fvpb/div)
-    int miso = 0;             // MISO enable        [0,1]
-  spi_init(length, mode, type, first, interrupt, div, miso);
- 
+  
 /* NOKIA 5510 LCD init */
     int Vop = 0x3B;           // Sets Vop           [0-127] (def. 59 (0x3B))  !!!
     int tempC = 0;            // Sets temp coeff.   [0-3]   (def. 0)
     int biasS = 3;            // Sets bias system   [0-7]   (def. 3)
   GLCD_init(Vop, tempC, biasS);
-
+    
 	main();	// Start main program
 	while(1);
 }

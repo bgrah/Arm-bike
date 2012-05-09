@@ -1,3 +1,6 @@
+// Date:   1.5.2012
+// Author: Blaž Grah
+
 #include "gpio.h"   // For pin macros and IO0SET/IO0CLR registers
 
 /* LCD pinout (5 GPIO pins + 3 supply pins) */
@@ -45,6 +48,6 @@ extern void GLCD_write_command(char command);
 extern void GLCD_write_data(char data);
 extern void GLCD_gotoxy(char xloc, char yloc);
 extern void GLCD_clean_ddram(void);
-extern void GLCD_putc(char data);
+extern void GLCD_putch(char data);
 extern void GLCD_putstring(char* string);
 extern void GLCD_putgraphic(char locx, char locy, char xpixel, char ypixel, char* graphic);

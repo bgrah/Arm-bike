@@ -2,6 +2,17 @@
 // Author: Janez Puhan
 // Modified: Blaž Grah - 29.4.2012
 
+/*
+    int length = 8;           // Data lenght        [8, 9, 10, 11, 12, 13, 14, 15 or 16]
+    int mode = high_rising;   // CPOL and CPHA      [high_rising, high_falling, low_rising or low_falling]
+    int type = master;        // Device type        [master, slave]
+    int first = msb;          // First transferred  [lsb, msb]
+    int interrupt = 0;        // Interrupt enable   [0,1]
+    int div = 8;              // fvpb divider       [8 -> 254] (clk = fvpb/div)
+    int miso = 0;             // MISO enable        [0,1]
+  spi_init(length, mode, type, first, interrupt, div, miso);
+*/
+  
 #include "spi.h"
 
 // Configure SPI0
