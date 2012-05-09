@@ -18,11 +18,11 @@ x_driver.h
 ----------
 
 ### Graphical LCD driver (`GLCD_driver.h/.c`)
-##### Done: 65%
+##### Done: 75% (HW SPI for 100%)
 
 + 1. 5. 2012		Working LCD driver with bit-banging. Write_: data, command, string, graphic; clear RAM; gotoxy                    
 + 2. 5. 2012		Improved code -> from 14% to 50% better timing. Still 92ms for full screen. HW SPI!
-+ 9. 5. 2012		Commenting code.
++ 9. 5. 2012		Code fully commented.
 
 ### PWM LED driver (`pwm.h/.c`)
 ##### Done: 30%
