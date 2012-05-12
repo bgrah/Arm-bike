@@ -19,21 +19,35 @@ void start_up()
   set_pin_direction(input, output);
     
 /* Timer1 init */
-    int t_prescale = 0;
-    int t_match[4] = {0,0,0,0}; // prekinitev se naredi naslednji urin cikel, kasneje spreminjaš T1MR0
-    int control = 0;  // prekinitev in reset
-    int count = timer; 
-  timer1_init(t_prescale, t_match, control, count);    // Inicializacija timer1
+    int t_prescale = 0;         // Timer prescale
+    int t_match[4] = {0,0,0,0}; // Match values
+    int control = 0;            // Match control   [combination of 0,mrXi, mrXr and mrXs, X=0,1,2,3]
+    int count = timer;          // Count control   [timer, counter_rising | capX, counter_falling | capX,
+                                //                  or counter_both | capX, where X = 0,1,2,3]
+  timer1_init(t_prescale, t_match, control, count);
     T1TCR = counter_enable;
     
 /* PWM init */
-    int p_output = pwmena5;     // Enabled outputs    [pwmenaX, X=1,2,3,4,5,6]
+    int p_output = pwmena5;   // Enabled outputs        [pwmenaX, X=1,2,3,4,5,6]
     int p_prescale = 0;       // Prescale value
     int p_match[7] = {15000,0,0,0,0,1*150,0};   // Match values
-    int match_control = 0;    // Match control      [0,pwmmrXi,pwmmrXr or pwmmrXs, X=0,1,2,3,4,5,6]
+    int match_control = 0;    // Match control          [0,pwmmrXi,pwmmrXr or pwmmrXs, X=0,1,2,3,4,5,6]
     int edge_control = 0;     // Double edge controlled [pwmselX, X=2,3,4,5,6]
   pwm_init(p_output, p_prescale, p_match, match_control, edge_control);
-    PWMTCR = pwm_enable;
+    PWMTCR = pwm_enable;      // Enable PWM
+
+/* Interrupt init */
+    //aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    
+/* I2C0 init */
+    int slave_address = 0;    // 7 bit address of this i2c in slave mode
+    int general_call = 0;     // If 1 -> recognise general call     (if slave_address and general_call == 0 -> master only mode)
+    int i_duty_H = 20;        // SCK high length in fvpb ticks  [20/20 for 375kHz, 19/19 for 395kHz]
+    int i_duty_L = 20;        // SCK low length in fvpb ticks   [formula: i2c_speed=fvpb/(high_ticks+low_ticks)]  (max i2c speed = 400kHz)
+    int i_duty = (i_duty_H << 16) | i_duty_L;
+    char tx_buf[20]=0;        // Pointer to data for slave transmitt mode   (not used)
+  i2c0_init(slave_address, general_call, i_duty, tx_buf);
+    I2C0CONSET = i2enc;       // Enable i2c
   
 /* NOKIA 5510 LCD init */
     int Vop = 0x3B;           // Sets Vop           [0-127] (def. 59 (0x3B))  !!!

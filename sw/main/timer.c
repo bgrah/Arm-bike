@@ -2,11 +2,12 @@
 // Author: Janez Puhan
 
 /*
-    int t_prescale = 0;
-    int t_match[4] = {0,0,0,0}; // prekinitev se naredi naslednji urin cikel, kasneje spreminjaš T1MR0
-    int control = 0;  // prekinitev in reset
-    int count = timer; 
-  timer1_init(t_prescale, t_match, control, count);    // Inicializacija timer1
+    int t_prescale = 0;         // Timer prescale
+    int t_match[4] = {0,0,0,0}; // Match values
+    int control = 0;            // Match control   [combination of 0,mrXi, mrXr and mrXs, X=0,1,2,3]
+    int count = timer;          // Count control   [timer, counter_rising | capX, counter_falling | capX,
+                                //                  or counter_both | capX, where X = 0,1,2,3]
+  timer1_init(t_prescale, t_match, control, count);
     T1TCR = counter_enable;
 */
     

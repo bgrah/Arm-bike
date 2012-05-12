@@ -1,6 +1,8 @@
 // Date:   1.5.2012
 // Author: Blaž Grah
 
+// Interface for PCD8544 graphic LCD driver found in Nokia 3310,5510 LCDs
+
 #include "gpio.h"   // For pin macros and IO0SET/IO0CLR registers
 
 /* LCD pinout (5 GPIO pins + 3 supply pins) */

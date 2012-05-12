@@ -7,22 +7,25 @@ void pwm_duty(int duty);
 
 int main()
 {
- // int smer;
- // int i=0;
+  int smer;
+  int i=0;
 
 
   while(1)
   {
-   if((IO0PIN & P0_16)==P0_16) GLCD_putgraphic(0,0, 84, 6, symbols);
+   /*if((IO0PIN & P0_16)==P0_16) GLCD_putgraphic(0,0, 84, 6, symbols);
    else  GLCD_clean_ddram();
 
- /*   
+    
     if(i==100) smer=-1;
     else if(i==0) smer=1;
     i+=smer;
     pwm_duty(i);
     wait(100000);
- */   
+   */
+    
+    
+    
 
   }
   return 0;
