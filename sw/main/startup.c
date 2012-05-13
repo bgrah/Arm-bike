@@ -2,6 +2,8 @@
 #include "spi.h"
 #include "timer.h"
 #include "pwm.h"
+#include "vic.h"
+#include "i2c.h"
 
 
 extern int main();
@@ -36,8 +38,13 @@ void start_up()
   pwm_init(p_output, p_prescale, p_match, match_control, edge_control);
     PWMTCR = pwm_enable;      // Enable PWM
 
-/* Interrupt init */
-    //aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+/* VIC init */
+    int fiq = 0;              // FIQ mask determines which interrupts are FIQ
+    int irq = i2c0;           // IRQ mask determines which interrupts are IRQ
+    voidfuncptr funk[16] = {handle_i2c0_state,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of pointers to ISRs for each sloted IRQ
+    int interrupt[16] = {i2c0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of sloted IRQs
+    voidfuncptr def = 0;      // pointer to unsloted ISR
+  vic_init(fiq, irq, funk, interrupt, def);
     
 /* I2C0 init */
     int slave_address = 0;    // 7 bit address of this i2c in slave mode
@@ -45,7 +52,7 @@ void start_up()
     int i_duty_H = 20;        // SCK high length in fvpb ticks  [20/20 for 375kHz, 19/19 for 395kHz]
     int i_duty_L = 20;        // SCK low length in fvpb ticks   [formula: i2c_speed=fvpb/(high_ticks+low_ticks)]  (max i2c speed = 400kHz)
     int i_duty = (i_duty_H << 16) | i_duty_L;
-    char tx_buf[20]=0;        // Pointer to data for slave transmitt mode   (not used)
+    char tx_buf[20];          // Pointer to data for slave transmitt mode   (not used)
   i2c0_init(slave_address, general_call, i_duty, tx_buf);
     I2C0CONSET = i2enc;       // Enable i2c
   

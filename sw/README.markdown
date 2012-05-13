@@ -28,3 +28,8 @@ x_driver.h
 ##### Done: 30%
 
 + 7. 5. 2012  		1 channel working. Need to incorporate Fvpb and set duyt-cycle functions into pwm.h. Free 1 more PWM channel!!                    
+
+### MPR121 I2C touch sensor driver (`mpr121.h/.c`)
+##### Done: 10%
+
++ 12. 5. 2012  		Started with I2C lib. 

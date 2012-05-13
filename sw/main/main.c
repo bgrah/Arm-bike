@@ -24,7 +24,10 @@ int main()
     wait(100000);
    */
     
-    
+    i2c0_address_rw;	// int Device address with read/write bit
+    i2c0_num_of_bytes;	// int Number of bytes to be received/transmitted
+    i2c0_status;		// int Current master status
+    *i2c0_buf;			// char Receiving/transmitting buffer 
     
 
   }

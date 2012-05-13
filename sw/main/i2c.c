@@ -71,10 +71,10 @@ void handle_i2c0_state()
 	int tmp = I2C0ADR, status = I2C0STAT;
 	switch(status)
 	{
-	case 0x00000000:
-		i2c0_status = i2c_error;
-		I2C0CONCLR = stac;
-		I2C0CONSET = sto;
+	case 0x00000000:      // Bus error has occurred.
+		i2c0_status = i2c_error;   // Mark i2c0 status as error
+		I2C0CONCLR = stac;         // Clear STA - not start
+		I2C0CONSET = sto;          // Set STO - stop
 		if(tmp) I2C0CONSET = aa;
 		else I2C0CONCLR = aac;
 		break;
@@ -109,41 +109,41 @@ void handle_i2c0_state()
 	case 0x00000038:      // Arbitration lost in SLA+R/W or Data bytes.
 		I2C0CONSET = sta;   // Set STA - Start will be transmited when bus becomes free.
 		break;
-	case 0x00000050:
-		i2c0_buf[i2c0_cnt] = I2C0DAT;
-		i2c0_cnt = i2c0_cnt + 1;
-	case 0x00000040:
-		i2c0_num_of_bytes = i2c0_num_of_bytes - 1;
-		if(i2c0_num_of_bytes) I2C0CONSET = aa;
-		else I2C0CONCLR = aac;
-		I2C0CONCLR = stac;
+	case 0x00000040:      // SLA+R has been transmitted; ACK has been received.
+		i2c0_num_of_bytes = i2c0_num_of_bytes - 1;  // Prepare data buffer index
+		if(i2c0_num_of_bytes) I2C0CONSET = aa;      // If data still to receive keep returning ACK
+		else I2C0CONCLR = aac;                      // When no more data to receive, return NOT ACK
+		I2C0CONCLR = stac;  // Clear STA - not start
 		break;
-	case 0x00000058:
-		i2c0_buf[i2c0_cnt] = I2C0DAT;
-	case 0x00000048:
-		if(tmp) I2C0CONSET = aa;
-		else I2C0CONCLR = aac;
-		i2c0_status = i2c_idle;
-		I2C0CONCLR = stac;
-		I2C0CONSET = sto;
+	case 0x00000048:      // SLA+R has been transmitted; NOT ACK has been received.
+		if(tmp) I2C0CONSET = aa;  // Set AA it slave address is present
+		else I2C0CONCLR = aac;    // If slave address (tmp) == 0 (master) than clear AA
+		i2c0_status = i2c_idle;   // Set current master status to idle
+		I2C0CONCLR = stac;  // Clear STA
+		I2C0CONSET = sto;   // Set STO - stop
 		break;
-	case 0x00000080:
-	case 0x00000090:
+	case 0x00000050:      // Data byte has been received; ACK has been returned.
+		i2c0_buf[i2c0_cnt] = I2C0DAT;   // Store data in data buffer
+		i2c0_cnt = i2c0_cnt + 1;        // Increase data buffer index
+  case 0x00000058:      // Data byte has been received; NOT ACK has been returned.
+		i2c0_buf[i2c0_cnt] = I2C0DAT;   // Last byte received
+	case 0x00000080:      // Previously addressed with own SLV address; DATA has been received; ACK has been returned.
+	case 0x00000090:      // Previously addressed with General Call; DATA byte has been received; ACK has been returned.
 		tmp = i2c0_rxslv_end;
 		i2c0_rxslv[tmp] = I2C0DAT;
 		tmp = tmp + 1;
 		if(tmp == bufsize) tmp = 0;
 		if(tmp != i2c0_rxslv_begin) i2c0_rxslv_end = tmp;
 		break;
-	case 0x000000a8:
-	case 0x000000b0:
+	case 0x000000a8:      // Own SLA+R has been received; ACK has been returned.
+	case 0x000000b0:      // Arbitration lost in SLA+R/W as master; Own SLA+R has been received, ACK has been returned.
 		i2c0_txslv_cnt = 0;
-	case 0x000000b8:
+	case 0x000000b8:      // Data byte in I2DAT has been transmitted; ACK has been received.
 		I2C0DAT = i2c0_txslv[i2c0_txslv_cnt];
 		i2c0_txslv_cnt = i2c0_txslv_cnt + 1;
 		break;
 	}
-	I2C0CONCLR = sic;   // Clear SI (sperial interrupt flag)
+	I2C0CONCLR = sic;   // Clear SI (serial interrupt flag)
 }
 
 // Handles events on i2c1 bus
