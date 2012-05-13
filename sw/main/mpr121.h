@@ -3,15 +3,21 @@
 
 // Register addresses of MPR121 (Freescale) touch sensor IC
 
-// Register addresses
-#define MHD_R	    0x2B    // MHD Rising
-#define NHD_R	    0x2C    // NHD Rising
-#define	NCL_R 	  0x2D    // NCL Rising
-#define	FDL_R	    0x2E    // FDL Rising
-#define	MHD_F	    0x2F    // MHD Falling
-#define	NHD_F	    0x30    // NHD Falling
-#define	NCL_F	    0x31    // NCL Falling
-#define	FDL_F	    0x32    // FDL Falling
+// MPR121 i2c address
+#define MPR121addr  0x5a  // Address
+#define MPR121_R    (MPR121addr << 1) | 0x01	// Address+Read
+#define MPR121_W    (MPR121addr << 1) | 0x00	// Address+Write
+
+
+// Touch status register addresses
+#define ELE0_TS   0x00
+#define ELE1_TS   0x01
+
+// Threshold values
+#define TOU_THRESH	0x0F    // Touch threshold
+#define	REL_THRESH	0x0A    // Release threshold
+
+// Electrodes touch and release threshold register addresses
 #define	ELE0_T	  0x41
 #define	ELE0_R	  0x42
 #define	ELE1_T	  0x43
@@ -36,21 +42,40 @@
 #define	ELE10_R	  0x56
 #define	ELE11_T	  0x57
 #define	ELE11_R	  0x58
-#define	FIL_CFG	  0x5D
-#define	ELE_CFG	  0x5E
-#define GPIO_CTRL0	0x73
-#define	GPIO_CTRL1	0x74
-#define GPIO_DATA	0x75
-#define	GPIO_DIR	0x76
-#define	GPIO_EN		0x77
-#define	GPIO_SET	0x78
-#define	GPIO_CLEAR	0x79
-#define	GPIO_TOGGLE	0x7A
-#define	ATO_CFG0	0x7B
-#define	ATO_CFGU	0x7D
-#define	ATO_CFGL	0x7E
-#define	ATO_CFGT	0x7F
 
-// Global Constants
-#define TOU_THRESH	0x0F
-#define	REL_THRESH	0x0A
+// Various register addresses
+#define MHD_R	    0x2B    // MHD Rising
+#define NHD_R	    0x2C    // NHD Rising
+#define	NCL_R 	  0x2D    // NCL Rising
+#define	FDL_R	    0x2E    // FDL Rising
+#define	MHD_F	    0x2F    // MHD Falling
+#define	NHD_F	    0x30    // NHD Falling
+#define	NCL_F	    0x31    // NCL Falling
+#define	FDL_F	    0x32    // FDL Falling
+#define	FIL_CFG	  0x5D    // Config?
+#define	ELE_CFG	  0x5E    // Electrode configuration
+
+// GPIO register addresses
+#define GPIO_CTRL0	0x73  // GPIO control 0
+#define	GPIO_CTRL1	0x74  // GPIO control 1
+#define GPIO_DATA	0x75    // GPIO data
+#define	GPIO_DIR	0x76    // GPIO direction
+#define	GPIO_EN		0x77    // GPIO enable
+#define	GPIO_SET	0x78    // GPIO set
+#define	GPIO_CLEAR	0x79  // GPIO clear
+#define	GPIO_TOGGLE	0x7A  // GPIO toggle
+
+// Auto-config
+#define SRTS      0x80    // Soft reset register 
+#define	ATO_CFG0	0x7B    // Control 0
+#define	ATO_CFG1	0x7C    // Control 1
+#define	ATO_CFGU	0x7D    // USL
+#define	ATO_CFGL	0x7E    // LSL
+#define	ATO_CFGT	0x7F    // Target level
+
+// Function declarations
+extern void mpr121_init(void);
+extern void mpr121_write(unsigned char address_reg, unsigned char data);
+extern void mpr121_read(unsigned char address_reg);
+extern void mpr121_action(void);
+extern void mpr121_irq(void);
