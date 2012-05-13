@@ -49,12 +49,15 @@ void start_up()
 /* I2C0 init */
     int slave_address = 0;    // 7 bit address of this i2c in slave mode
     int general_call = 0;     // If 1 -> recognise general call     (if slave_address and general_call == 0 -> master only mode)
-    int i_duty_H = 20;        // SCK high length in fvpb ticks  [20/20 for 375kHz, 19/19 for 395kHz]
-    int i_duty_L = 20;        // SCK low length in fvpb ticks   [formula: i2c_speed=fvpb/(high_ticks+low_ticks)]  (max i2c speed = 400kHz)
+    int i_duty_H = 40;        // SCK high length in fvpb ticks  [30/30 for 250kHz, 40/40 for 188kHz, 20/20 for 375kHz, 19/19 for 395kHz]
+    int i_duty_L = 40;        // SCK low length in fvpb ticks   [formula: i2c_speed=fvpb/(high_ticks+low_ticks)]  (max i2c speed = 400kHz)
     int i_duty = (i_duty_H << 16) | i_duty_L;
     char tx_buf[20];          // Pointer to data for slave transmitt mode   (not used)
   i2c0_init(slave_address, general_call, i_duty, tx_buf);
     I2C0CONSET = i2enc;       // Enable i2c
+    
+/* MPR121 Touch sensor init */
+    mpr121_init();
   
 /* NOKIA 5510 LCD init */
     int Vop = 0x3B;           // Sets Vop           [0-127] (def. 59 (0x3B))  !!!

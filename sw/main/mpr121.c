@@ -6,17 +6,21 @@
 */
 
 #include "mpr121.h"
- /* VIC globals
-    i2c0_address_rw;	  // int Device address with read/write bit
-    i2c0_num_of_bytes;	// int Number of bytes to be received/transmitted
-    i2c0_status;		    // int Current master status
-    *i2c0_buf;			    // char Receiving/transmitting buffer 
-    
-    I2C0CONSET = sta;   // To start?
- */
+#include "i2c.h"
 
+/* VIC globals
+  i2c0_address_rw;	  // int Device address with read/write bit
+  i2c0_num_of_bytes;	// int Number of bytes to be received/transmitted
+  i2c0_status;		    // int Current master status
+  *i2c0_buf;			    // char Receiving/transmitting buffer 
+  
+  I2C0CONSET = sta;   // To start?
+*/
+
+unsigned char mpr121_buf[20];
 void mpr121_init(void)
 {
+  i2c0_buf = mpr121_buf;  // Point i2c_buffer to mpr121_buffer... test :)  
 /* Opombe:
    -> ELEx_T/R registre zapiši v for zanki, naslov poveèuj za ena (samo toliko kot jih rabiš
   
@@ -61,12 +65,14 @@ void mpr121_write(unsigned char address_reg, unsigned char data)
   // i2c send (data)
   // i2c STOP
   
-  /* 
-     I2C0CONSET = sta;
-     i2c0_num_of_bytes = 2;
-     i2c0_address_rw = MPR121_W;
-     i2c0_buf = {address_reg,data};
-  */
+  while(i2c0_status!=i2c_idle);
+  i2c0_num_of_bytes = 2;
+  i2c0_address_rw = MPR121_W;
+  mpr121_buf[0] = address_reg;
+  mpr121_buf[1] = data;
+  I2C0CONSET = sta;
+  while(i2c0_status!=i2c_idle);
+  I2C0CONSET = sto;
 }
 
 void mpr121_read(unsigned char address_reg)
@@ -75,44 +81,60 @@ void mpr121_read(unsigned char address_reg)
   // i2c send (MPR121_W)
   // i2c send (address_reg)
   
-  // i2c START
+  // i2c repeated START
   // i2c send (MPR121_R)
   // i2c receive
   // i2c STOP
   
-  /*
-     unsigned char data;
-     
-     I2C0CONSET = sta;
-     i2c0_num_of_bytes = 1;
-     i2c0_address_rw = MPR121_W;
-     i2c0_buf = address_reg;
-     
-     I2C0CONSET = sta;
-     i2c0_num_of_bytes = 1;
-     i2c0_address_rw = MPR121_R;
-     wait to finnish; look state
-     data = i2c0_buf[0];
-     
-     mpr121_action();
-  */
-
+  unsigned char data;
+  
+  while(i2c0_status!=i2c_idle);
+  i2c0_num_of_bytes = 1;
+  i2c0_address_rw = MPR121_W;
+  mpr121_buf[0] = address_reg;
+  I2C0CONSET = sta;
+  
+  while(i2c0_status!=i2c_idle);
+  i2c0_num_of_bytes = 1;
+  i2c0_address_rw = MPR121_R;
+  I2C0CONSET = sta;
+  while(i2c0_status!=i2c_idle);
+  data = mpr121_buf[0];
+  
+  mpr121_action(data);
 }
 
-void mpr121_action(void)
+void mpr121_action(unsigned char data)
 {
-  // Do for press
-  /*
-    static char button0_state=0;
-    static char button1_state=0;
-    ...
-     
-    if(PRESS1 & !button0_state) display(1); button0_state=1;
-    else button0_state=0;
-    if(PRESS1 & !button1_state) display(1); button1_state=1;
-    else button1_state=0;
-    ... 
-  */
+  static char button0_state=0;
+  static char button1_state=0;
+  static char button2_state=0;
+  static char button3_state=0;
+  
+// 0   
+  if((data&0x01) && !button0_state)
+  {
+    GLCD_putch(data); button0_state=1;
+  }
+  else button0_state=0;
+// 1  
+  if((data&0x02) && !button1_state)
+  {
+    GLCD_putch(data); button1_state=1;
+  }
+  else button1_state=0;
+// 2  
+  if((data&0x04) && !button2_state)
+  {
+    GLCD_putch(data); button2_state=1;
+  }
+  else button2_state=0;
+// 3  
+  if((data&0x08) && !button2_state)
+  {
+    GLCD_putch(data); button2_state=1;
+  }
+  else button3_state=0;
 }
 
 void mpr121_irq(void)

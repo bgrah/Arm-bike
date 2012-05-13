@@ -1,5 +1,6 @@
 // Date:   15.2.2007
 // Author: Janez Puhan
+// Modified: Blaž Grah (13. 5. 2012)
 
 #include "i2c.h"
 
@@ -82,9 +83,11 @@ void handle_i2c0_state()
 	case 0x00000010:      // A repeated START condition has been transmitted.
 		i2c0_cnt = 0;       // i2c data buffer index
 		I2C0DAT = i2c0_address_rw;    // Sent slave address and R/W bit
+    I2C0CONSET = aa; /**/
 		break;
 	case 0x00000018:      // SLA+W has been transmitted; ACK has been received.
 		i2c0_num_of_bytes_internal = i2c0_num_of_bytes;   // Number of bytes to transmit/receive
+    I2C0CONSET = aa; /**/
 	case 0x00000020:      // SLA+W has been transmitted; NOT ACK has been received.
 		i2c0_status = i2c_idle;       // Set current master status to idle
 		I2C0CONCLR = stac;  // Clear STA - not start

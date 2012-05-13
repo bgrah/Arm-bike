@@ -3,6 +3,9 @@
 
 // Register addresses of MPR121 (Freescale) touch sensor IC
 
+// i2c transmitt/receive buffer
+extern unsigned char mpr121_buf[20];
+  
 // MPR121 i2c address
 #define MPR121addr  0x5a  // Address
 #define MPR121_R    (MPR121addr << 1) | 0x01	// Address+Read
@@ -77,5 +80,5 @@
 extern void mpr121_init(void);
 extern void mpr121_write(unsigned char address_reg, unsigned char data);
 extern void mpr121_read(unsigned char address_reg);
-extern void mpr121_action(void);
+extern void mpr121_action(unsigned char data);
 extern void mpr121_irq(void);
