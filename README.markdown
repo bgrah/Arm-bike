@@ -1,4 +1,4 @@
-Arm bike (GPS enabled bike ARM7 based system)
+Arm bike (ARM7 based system with GPS and graphical UI)
 =============================================
 
 Description
@@ -16,8 +16,10 @@ Documents
 
 Current state:
 --------------
-+ 23.4.2012 -> First prototype PCB for MCU module (still waiting for parts from Farnell (2.5.))
-+  1.5.2012 -> Started working on software. Working interface (bit-banging) with graphic Nokia 5510 (84x48px) display.
++ 23. 4. 2012 -> First prototype PCB for MCU module (still waiting for parts from Farnell (13.5.))
++  1. 5. 2012 -> Started working on software.
++ 11. 5. 2012 -> Realized that the hardware part of project won't be finnished in time (still waiting for parts) :/
++ 13. 5. 2012 -> Software is comming nicely together. Still a lot of work, but its nice to see working things.
 
 Author
 ------
