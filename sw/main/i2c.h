@@ -60,7 +60,9 @@ extern void i2c1_init(int slave_address, int general_call, int duty, char *tx_bu
 extern int i2c0_rxslv_begin, i2c0_rxslv_end, i2c0_address_rw, i2c0_num_of_bytes,
 	i2c0_status, i2c1_rxslv_begin, i2c1_rxslv_end, i2c1_address_rw,
 	i2c1_num_of_bytes, i2c1_status;
-extern char i2c0_rxslv[bufsize], *i2c0_txslv, *i2c0_buf, i2c1_rxslv[bufsize],
+//x extern char i2c0_rxslv[bufsize], *i2c0_txslv, *i2c0_buf, i2c1_rxslv[bufsize],
+//x 	*i2c1_txslv, *i2c1_buf;
+extern char i2c0_rxslv[bufsize], *i2c0_txslv, i2c0_buf[20], i2c1_rxslv[bufsize],
 	*i2c1_txslv, *i2c1_buf;
 
 // Interrupt service routines
