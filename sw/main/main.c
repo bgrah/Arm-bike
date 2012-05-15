@@ -5,7 +5,7 @@
 #include "mpr121.h"
 
 void pwm_duty(int duty);
-
+extern unsigned char mpr121_rx_buf[];
 unsigned char gps_buf[50];
 
 int main()
@@ -29,7 +29,11 @@ int main()
     wait(100000);
    */
     
-   mpr121_read(ELE0_TS); 
+  mpr121_read(ELE0_TS);
+  if((mpr121_rx_buf[0]+64)=='O') GLCD_putgraphic(16,0, 52, 6, trololo);
+
+  GLCD_gotoxy(0,0);
+  GLCD_putch(mpr121_rx_buf[0]+64);      // @ not, A - 1, B - 2, D - 4, H - 8
  //GLCD_putstring(gps_buf);
   }
   return 0;
