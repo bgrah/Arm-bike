@@ -17,7 +17,9 @@
   I2C0CONSET = sta;   // To start?
 */
 
-unsigned char mpr121_buf[20];
+unsigned char mpr121_tx_buf[2];    // MPR121 register address and data
+unsigned char mpr121_rx_buf[1];    // Data
+
 void mpr121_init(void)
 { 
 /* Opombe:
@@ -63,17 +65,25 @@ void mpr121_write(unsigned char address_reg, unsigned char data)
   // i2c send (reg address)
   // i2c send (data)
   // i2c STOP
+  mpr121_tx_buf[0] = address_reg;  
+  mpr121_tx_buf[1] = data;
+    
+  while(i2c0_status != i2c_idle);
+  i2c0_status = i2c_busy;
+  i2c0_num_of_bytes = 2;
+  i2c0_address_rw = MPR121_W;
+  i2c0_buf = mpr121_tx_buf;    // i2c0_buf is pointer to mpr121_buf
+  I2C0CONSET = sta;
   
-  while(i2c0_num_of_bytes); // ?? Rabim
-  
+  /*
   // 13.9.2 Start master transmit function
                                 // 1. Initialize Master data counter.  DONE globally
   i2c0_address_rw = MPR121_W;   // 2. Set up the Slave Address to which data will be transmitted, and add the Write bit.
   I2C0CONSET = sta;             // 3. Write 0x20 to I2CONSET to set the STA bit.  
-  i2c0_buf[0] = address_reg;  // 4. Set up data to be transmitted in Master Transmit buffer.
+  i2c0_buf[0] = address_reg;    // 4. Set up data to be transmitted in Master Transmit buffer.
   i2c0_buf[1] = data;
   i2c0_num_of_bytes = 2;        // 5. Initialize the Master data counter to match the length of the message being sent.
-                                // 6. Exit
+                                // 6. Exit  */
 }
 
 void mpr121_read(unsigned char address_reg)
@@ -88,9 +98,23 @@ void mpr121_read(unsigned char address_reg)
   // i2c STOP
   
   unsigned char data;
+
+  mpr121_tx_buf[0] = address_reg;  
+    
+  while(i2c0_status != i2c_idle);
+  i2c0_status = i2c_busy;
+  i2c0_num_of_bytes = 1;
+  i2c0_address_rw = MPR121_W;
+  i2c0_buf = mpr121_tx_buf;    // i2c0_buf is pointer to mpr121_buf
+  I2C0CONSET = sta;  
   
-  while(i2c0_num_of_bytes); // ?? Rabim
-  
+  while(i2c0_status != i2c_idle);
+  i2c0_status = i2c_busy;
+  i2c0_num_of_bytes = 1;
+  i2c0_address_rw = MPR121_R;
+  i2c0_buf = mpr121_rx_buf;    // naslov kamor bo zapisalo
+  I2C0CONSET = sta;
+  /*
   // 13.9.2 Start master transmit function
                                 // 1. Initialize Master data counter.   DONE globally
   i2c0_address_rw = MPR121_W;   // 2. Set up the Slave Address to which data will be transmitted, and add the Write bit.
@@ -99,17 +123,17 @@ void mpr121_read(unsigned char address_reg)
   i2c0_num_of_bytes = 1;        // 5. Initialize the Master data counter to match the length of the message being sent.
                                 // 6. Exit
   // Restart! MPR121
-  while(i2c0_num_of_bytes);
+  while(i2c0_num_of_bytes);*/
   // 13.9.3 Start master receive function
-                                // 1. Initialize Master data counter.   DONE globally
+  /*                              // 1. Initialize Master data counter.   DONE globally
   i2c0_address_rw = MPR121_R;   // 2. Set up the Slave Address to which data will be transmitted, and add the Read bit.
   I2C0CONSET = sta;             // 3. Write 0x20 to I2CONSET to set the STA bit.
                                 // 4. Set up the Master Receive buffer. DONE globally
   i2c0_num_of_bytes = 1;        // 5. Initialize the Master data counter to match the length of the message to be received.
                                 // 6. Exit
-  
-  while(i2c0_num_of_bytes);
-  data = i2c0_buf[0];
+  */
+  while(i2c0_status != i2c_idle);
+  data = mpr121_rx_buf[0];
   
   GLCD_gotoxy(0,0);
   GLCD_putch(data+64);      // @ not, A - 1, B - 2, D - 4, H - 8

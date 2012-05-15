@@ -40,7 +40,7 @@ void start_up()
   pwm_init(p_output, p_prescale, p_match, match_control, edge_control);
     PWMTCR = pwm_enable;      // Enable PWM
     
-/* UART0 init */ 
+/* UART0 init  
     int baud_rate=9600;
     int word_length=word_length_8_bit;
     int stop_bit=one_stop_bit;
@@ -50,16 +50,26 @@ void start_up()
     uart0_init(baud_rate, word_length, stop_bit, parity,	parity_type, interrupts);
   
     U0TER = txen; //Omogoèenje oddajanja
-
-/* VIC init */
+    */
+/* VIC init 
     int fiq = 0;              // FIQ mask determines which interrupts are FIQ
     int irq = i2c0 | uart0;           // IRQ mask determines which interrupts are IRQ
     voidfuncptr funk[16] = {handle_i2c0_state,uart0_read,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of pointers to ISRs for each sloted IRQ
     int interrupt[16] = {i2c0,uart0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of sloted IRQs
     voidfuncptr def = 0;      // pointer to unsloted ISR
   vic_init(fiq, irq, funk, interrupt, def);
+*/
+/* VIC init */
+    int fiq = 0;              // FIQ mask determines which interrupts are FIQ
+    int irq = i2c0;           // IRQ mask determines which interrupts are IRQ
+    voidfuncptr funk[16] = {handle_i2c0_state,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of pointers to ISRs for each sloted IRQ
+    int interrupt[16] = {i2c0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of sloted IRQs
+    voidfuncptr def = 0;      // pointer to unsloted ISR
+  vic_init(fiq, irq, funk, interrupt, def);    
     
-/* I2C0 init 
+ /* I2C0 init */
+    extern unsigned char mpr121_tx_buf[];
+    extern unsigned char mpr121_rx_buf[];
     int slave_address = 0;    // 7 bit address of this i2c in slave mode
     int general_call = 0;     // If 1 -> recognise general call     (if slave_address and general_call == 0 -> master only mode)
     int i_duty_H = 200;       // SCK high length in fvpb ticks  [200/200 for 37,5kHz, 160/160 for 50kHz, 30/30 for 250kHz]  (check the bus for signal rise time!!!)
@@ -68,10 +78,10 @@ void start_up()
     char tx_buf[20];          // Pointer to data for slave transmitt mode   (not used)
   i2c0_init(slave_address, general_call, i_duty, tx_buf);
     I2C0CONSET = i2enc;       // Enable i2c
-*/    
-/* MPR121 Touch sensor init 
+    
+/* MPR121 Touch sensor init */
     mpr121_init();
-*/ 
+ 
     
 /* NOKIA 5510 LCD init */
     int Vop = 0x3B;           // Sets Vop           [0-127] (def. 59 (0x3B))  !!!

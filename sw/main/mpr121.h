@@ -2,9 +2,6 @@
 // Author: Blaž Grah
 
 // Register addresses of MPR121 (Freescale) touch sensor IC
-
-// i2c transmitt/receive buffer
-extern unsigned char mpr121_buf[20];
   
 // MPR121 i2c address
 #define MPR121addr  0x5a  // Address

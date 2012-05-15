@@ -29,8 +29,8 @@ int main()
     wait(100000);
    */
     
- //  mpr121_read(ELE0_TS); 
- GLCD_putstring(gps_buf);
+   mpr121_read(ELE0_TS); 
+ //GLCD_putstring(gps_buf);
   }
   return 0;
 }
