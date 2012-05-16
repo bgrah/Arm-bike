@@ -6,35 +6,31 @@
 
 void pwm_duty(int duty);
 extern unsigned char mpr121_rx_buf[];
-unsigned char gps_buf[50];
+extern unsigned char gps_buf[80];
 
 int main()
 {
-  int smer;
+  int smer=7;
   int i=0;
-
-  //GLCD_putgraphic(0,0, 84, 6, symbols);
-  //wait(1000000);
 
   while(1)
   {
 //   if((IO0PIN & P0_16)==P0_16) GLCD_putgraphic(0,0, 84, 6, symbols);
 //   else  GLCD_clean_ddram();
 
-   /* 
-    if(i==100) smer=-1;
-    else if(i==0) smer=1;
-    i+=smer;
-    pwm_duty(i);
-    wait(100000);
-   */
+  i+=smer;
+  if(i>=100) {smer=-7; i=100;}
+  else if(i<=0){ smer=7; i=0;}
+  pwm_duty(i);   
     
   mpr121_read(ELE0_TS);
-  if((mpr121_rx_buf[0]+64)=='O') GLCD_putgraphic(16,0, 52, 6, trololo);
-
   GLCD_gotoxy(0,0);
   GLCD_putch(mpr121_rx_buf[0]+64);      // @ not, A - 1, B - 2, D - 4, H - 8
- //GLCD_putstring(gps_buf);
+
+  GLCD_gotoxy(0,1);
+  GLCD_putstring(gps_buf);
+  wait(700000);
+      
   }
   return 0;
 }

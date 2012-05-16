@@ -3,5 +3,7 @@
 
 
 /* Function declaration */
-extern char gps_buf[50];
+extern unsigned char gps_buf[80];
 extern void uart0_read(void);
+
+extern void uart1_sent(unsigned char data);

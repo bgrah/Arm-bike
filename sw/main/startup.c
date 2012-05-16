@@ -40,32 +40,36 @@ void start_up()
   pwm_init(p_output, p_prescale, p_match, match_control, edge_control);
     PWMTCR = pwm_enable;      // Enable PWM
     
-/* UART0 init  
+/* UART0 init */ 
     int baud_rate=9600;
     int word_length=word_length_8_bit;
     int stop_bit=one_stop_bit;
     int parity=disable_parity;
   	int parity_type=0;
     int interrupts=rx_data_available;
-    uart0_init(baud_rate, word_length, stop_bit, parity,	parity_type, interrupts);
+  uart0_init(baud_rate, word_length, stop_bit, parity,	parity_type, interrupts);
   
     U0TER = txen; //Omogoèenje oddajanja
-    */
-/* VIC init 
+    
+/* UART1 init */ 
+    int baud1_rate=57600;
+    int word1_length=word_length_8_bit;
+    int stop1_bit=one_stop_bit;
+    int parity1=disable_parity;
+  	int parity1_type=0;
+    int handshake1=0;
+    int interrupts1=0;
+  uart1_init(baud1_rate, word1_length, stop1_bit, parity1,	parity1_type, handshake1, interrupts1);
+  
+    U1TER = txen; //Omogoèenje oddajanja
+    
+/* VIC init */
     int fiq = 0;              // FIQ mask determines which interrupts are FIQ
     int irq = i2c0 | uart0;           // IRQ mask determines which interrupts are IRQ
     voidfuncptr funk[16] = {handle_i2c0_state,uart0_read,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of pointers to ISRs for each sloted IRQ
     int interrupt[16] = {i2c0,uart0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of sloted IRQs
     voidfuncptr def = 0;      // pointer to unsloted ISR
-  vic_init(fiq, irq, funk, interrupt, def);
-*/
-/* VIC init */
-    int fiq = 0;              // FIQ mask determines which interrupts are FIQ
-    int irq = i2c0;           // IRQ mask determines which interrupts are IRQ
-    voidfuncptr funk[16] = {handle_i2c0_state,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of pointers to ISRs for each sloted IRQ
-    int interrupt[16] = {i2c0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // Array of sloted IRQs
-    voidfuncptr def = 0;      // pointer to unsloted ISR
-  vic_init(fiq, irq, funk, interrupt, def);    
+  vic_init(fiq, irq, funk, interrupt, def);  
     
  /* I2C0 init */
     extern unsigned char mpr121_tx_buf[];
