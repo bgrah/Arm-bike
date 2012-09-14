@@ -4,29 +4,38 @@
 #include "gps_uart.h"
 #include "uart.h"
 #include "vic.h"
-unsigned char gps_buf[80];
+unsigned char gps_buf[60];
+
 void uart0_read(void)   // Interrupt
 {
-  static int i,j;
+  static int i=0,j=0;
   unsigned char data_rx;
   if((U0IIR & interrupt_pending) == 0)    //Je prisotna zahteva po prekinitvi
   {
     if((U0IIR & interrupt_id) == rx_data_available_id)  //Je na voljo podatek
     {
       data_rx=U0RBR;
+      uart1_sent(data_rx);
+      /*if(data_rx == '$') {i=0; j=0;}
+      if(i<58)
+      {  
+        gps_buf[i]=data_rx;
+        gps_buf[i+1]=0;
+      }
+      */
       if(data_rx == '$') {i=0; j=0;}
       if((data_rx == 'G') && (i==1))  {j++; }
       if((data_rx == 'P') && (i==2))  {j++; }
       if((data_rx == 'G') && (i==3))  {j++; }
       if((data_rx == 'G') && (i==4))  {j++; }
       if((data_rx == 'A') && (i==5))  {j++;  i=0;}
-      if(j==5){   if((data_rx != 0x0A) && (data_rx != 0x0D)){  // CR and NL
+      if(j==5 && i < 55){   
+                  if((data_rx != 0x0A) && (data_rx != 0x0D)){  // CR and NL
                     gps_buf[i]=data_rx;}
                   else
-                    gps_buf[i]=0; // NULL
-                  uart1_sent(data_rx);
-                  
-              }
+                    gps_buf[i]=0; // NULL            
+      }
+      
       i++;
     }
     else

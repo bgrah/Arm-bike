@@ -49,6 +49,7 @@ void mpr121_init(void)
   mpr121_write(ATO_CFGL, 0x82);	// LSL = 0.65*USL = 0x82 @3.3V
   mpr121_write(ATO_CFGT, 0xb5);  // Target = 0.9*USL = 0xB5 @3.3V
   mpr121_write(ATO_CFG0, 0x1B);
+//  mpr121_write(ATO_CFG1, 0x01);  //????
   
   // Electrode Configuration
   mpr121_write(ELE_CFG, 0x84);   // Enable 4 Electrodes and set to run mode
@@ -88,40 +89,12 @@ void mpr121_read(unsigned char address_reg)
 
 void mpr121_action(unsigned char data)
 {
-  static char button0_state=0;
-  static char button1_state=0;
-  static char button2_state=0;
-  static char button3_state=0;
-  
-// 0   
-  if((data&0x01) && !button0_state)
-  {
-    GLCD_putch(data); button0_state=1;
-  }
-  else button0_state=0;
-// 1  
-  if((data&0x02) && !button1_state)
-  {
-    GLCD_putch(data); button1_state=1;
-  }
-  else button1_state=0;
-// 2  
-  if((data&0x04) && !button2_state)
-  {
-    GLCD_putch(data); button2_state=1;
-  }
-  else button2_state=0;
-// 3  
-  if((data&0x08) && !button2_state)
-  {
-    GLCD_putch(data); button2_state=1;
-  }
-  else button3_state=0;
+  // Button action
 }
 
 void mpr121_irq(void)
 {
-  // External interrupt when touch/release detected  
+  mpr121_read(ELE0_TS); // Read touch register  
 }
 
 

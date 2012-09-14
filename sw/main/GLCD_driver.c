@@ -122,11 +122,11 @@
 /*************************************************************************************************/
 /*************************************************************************************************/
 /* GotoXY position function */
-  // Input:       xloc      ... 8-bit of x position [0-84]  (px)
-  //              yloc      ... 8-bit of y position [0-6]   (6 bytes -> 48px)
+  // Input:       xloc      ... 8-bit of x position [0-83]  (px)
+  //              yloc      ... 8-bit of y position [0-5]   (6 bytes -> 48px)
   // Output:      none
   // Description: Sets position on LCD
-  // Important!:  Y coordinate must be form 0-6 and not in pixels (0-48).
+  // Important!:  Y coordinate must be 0-5 and not in pixels (0-47).
   // WCET:        373 us
   void GLCD_gotoxy(char xloc, char yloc)
   {
