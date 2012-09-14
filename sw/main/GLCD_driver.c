@@ -228,10 +228,10 @@
   // Description: Sends characters one by one to GLCD_putch untill null termination
   // Important!:  Must set x,y position before calling this function.
   // WCET:        16.427 us (16 char long)
-  void GLCD_putstring(char* stringg)
+  void GLCD_putstring(char *str)
   {
-  	while (*stringg)							// Till the end off string
-  		GLCD_putch(*(stringg++));		// Calls GLCD_putch to send	
+    int i;
+  	for(i = 0; str[i]; i++)	GLCD_putch(str[i]);	// Calls GLCD_putch to send
   }
 /*************************************************************************************************/
 /*************************************************************************************************/
