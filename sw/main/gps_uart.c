@@ -8,7 +8,7 @@
 unsigned char rmcStr[100] = {0};
 unsigned char ggaStr[100] = {0};
 unsigned char gsaStr[100] = {0};
-int dispFlag = 0;
+int gpsEndFlag = 0;
 
 void uart0_read(void)   // Interrupt
 {
@@ -44,7 +44,7 @@ void uart0_read(void)   // Interrupt
       if(data_rx == 13)   // <CR>, zadnji znak stavka
       {
         i = 0;
-        if(gpsId == 4) dispFlag = 1;  // Ko je konec GLL stavka, zaèni prikaz
+        if(gpsId == 4) gpsEndFlag = 1;  // Ko je konec GLL stavka, zaèni prikaz
       }      
       
       if(i>=8)    // Zaèetek podatkov
