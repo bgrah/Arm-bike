@@ -49,17 +49,17 @@ void uart0_read(void)   // Interrupt
       
       if(i>=8)    // Zaèetek podatkov
       {
-        if(gpsId == 1)
+        if(gpsId == 1) // RMC
         {
           rmcStr[i-8] = data_rx;
           rmcStr[i-7] = 0;
         }
-        if(gpsId == 2)
+        if(gpsId == 2) // GGA
         {
           ggaStr[i-8] = data_rx;
           ggaStr[i-7] = 0;
         }
-        if(gpsId == 3)
+        if(gpsId == 3) // GSA
         {
           gsaStr[i-8] = data_rx;
           gsaStr[i-7] = 0;

@@ -245,7 +245,7 @@
   // Description: Displays bitmap graphic on LCD
   // Important!:  /
   // WCET:        92.402 us
-  void GLCD_putgraphic(char locx, char locy, char xpixel, char ypixel, char* graphic)
+  void GLCD_putgraphic(char locx, char locy, char xpixel, char ypixel, unsigned char* graphic)
   {
   	int i,j,k;
   	char endpage=locy+ypixel;

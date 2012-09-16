@@ -52,4 +52,4 @@ extern void GLCD_gotoxy(char xloc, char yloc);
 extern void GLCD_clean_ddram(void);
 extern void GLCD_putch(char data);
 extern void GLCD_putstring(char* string);
-extern void GLCD_putgraphic(char locx, char locy, char xpixel, char ypixel, char* graphic);
+extern void GLCD_putgraphic(char locx, char locy, char xpixel, char ypixel, unsigned char* graphic);
