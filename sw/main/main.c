@@ -40,8 +40,8 @@ int main()
       if((i%300) == 30) {GLCD_clean_ddram(); GLCD_putgraphic(9, 1, 48, 5, space1);}
       if((i%300) == 60) {GLCD_clean_ddram(); GLCD_putgraphic(18, 1, 48, 5, space1);}
       if((i%300) == 90) {GLCD_clean_ddram(); GLCD_putgraphic(27, 1, 48, 5, space1);}
-      if((i%300) == 120) {GLCD_clean_ddram(); GLCD_putgraphic(35, 1, 48, 5, space1);}
-      if((i%300) == 150) {GLCD_clean_ddram(); GLCD_putgraphic(35, 1, 48, 5, space2);}
+      if((i%300) == 120) {GLCD_clean_ddram(); GLCD_putgraphic(36, 1, 48, 5, space1);}
+      if((i%300) == 150) {GLCD_clean_ddram(); GLCD_putgraphic(36, 1, 48, 5, space2);}
       if((i%300) == 180) {GLCD_clean_ddram(); GLCD_putgraphic(27, 1, 48, 5, space2);}
       if((i%300) == 210) {GLCD_clean_ddram(); GLCD_putgraphic(18, 1, 48, 5, space2);}
       if((i%300) == 240) {GLCD_clean_ddram(); GLCD_putgraphic(9, 1, 48, 5, space2);}
