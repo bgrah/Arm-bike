@@ -1,12 +1,26 @@
 #include "GLCD_driver.h"
 #include "graphics.h"
 #include "gpio.h"
-//#include "pwm.h"
 #include "mpr121.h"
+#include "timer.h"
 
+// Macroji
 #define premikUre 2
+#define osTimeSlice 200000  // 200ms
+#define max_dispStates 4
 
+// Funkcije
 void readGpsData(void);
+void dispGps(void);
+void mpr121read(void);
+void izracunStats(void);
+
+// Razlièni prikazi na ekranu
+void osnovniZaslon(void);
+void grafVisina(void);
+void grafHitrost(void);
+void statusBar(void);
+void dispStats(void);
 
 // Zunanje uporabljene spremenljivke
 extern unsigned char mpr121_rx_buf[20];
@@ -15,11 +29,25 @@ extern unsigned char ggaStr[100];
 extern unsigned char gsaStr[100];
 extern int gpsEndFlag;
 
+// Tipke
+int touchPress;
+int dispState=0;
+int dispChange=1;
+
+// Sateliti dobljeni?
+int firstFixOk = 0;
+
+// Shranjena statistika
+int maxSpeed=0;
+int maxAltitude=0;
+int skupnaRazdalja=0;
+
 // Prebrani podatki iz GPS stringov
 char utcTime[10];             // hh:mm:ss'\0
 int gpsFix=1;                 // 1,2,3
 int satUsed=0;                // 0 -> 12
-char kmhSpeed[10]="    km/h";            // Hitrost v vozlih
+char kmhSpeed[10]="    km/h"; // Hitrost v km/h (string)
+int kmhSpeedNum;              // Hitrost v km/h (int)
 char latitudeDeg[15];         // g.širina N dd°mm',mmmm
 char longitudeDeg[15];        // g.dolžina E ddd°mm',mmmm
 char visinaStr[10]="     m";  // Nadmorska višina (znakovni niz)
@@ -29,92 +57,250 @@ int  visinaNum;               // Nadmorska višina (številka)
 /* ----- Main ----- */
 int main()
 {
-  int i=1;
+  int i=0;
+  unsigned int timeStart=T1TC;
+  
   while(1)
   { 
-    if(gpsFix == 1)
-    {
-      GLCD_gotoxy(0,0);
-      GLCD_putstring("Cakam na GPS.");
-      if((i%300) == 0) {GLCD_clean_ddram(); GLCD_putgraphic(0, 1, 48, 5, space1);}
-      if((i%300) == 30) {GLCD_clean_ddram(); GLCD_putgraphic(9, 1, 48, 5, space1);}
-      if((i%300) == 60) {GLCD_clean_ddram(); GLCD_putgraphic(18, 1, 48, 5, space1);}
-      if((i%300) == 90) {GLCD_clean_ddram(); GLCD_putgraphic(27, 1, 48, 5, space1);}
-      if((i%300) == 120) {GLCD_clean_ddram(); GLCD_putgraphic(36, 1, 48, 5, space1);}
-      if((i%300) == 150) {GLCD_clean_ddram(); GLCD_putgraphic(36, 1, 48, 5, space2);}
-      if((i%300) == 180) {GLCD_clean_ddram(); GLCD_putgraphic(27, 1, 48, 5, space2);}
-      if((i%300) == 210) {GLCD_clean_ddram(); GLCD_putgraphic(18, 1, 48, 5, space2);}
-      if((i%300) == 240) {GLCD_clean_ddram(); GLCD_putgraphic(9, 1, 48, 5, space2);}
-      if((i%300) == 270) {GLCD_clean_ddram(); GLCD_putgraphic(0, 1, 48, 5, space2);}
-      i++;
-    }
-    else
-    {
-      if(i>0)
-      {
-        GLCD_clean_ddram();
-        i=0;
-      }
-      GLCD_gotoxy(0,0);      // Time
-      GLCD_putstring(utcTime);
-      
-      switch(gpsFix)   // Èe je GPS fix, prikaz 2D, 3D
-      {
-        case 1: GLCD_putgraphic(55, 0, 8, 1, fixno); break; // No fix
-        case 2: GLCD_putgraphic(55, 0, 8, 1, fix2D); break; // 2D fix
-        case 3: GLCD_putgraphic(55, 0, 8, 1, fix3D); break; // 3D fix
-      }
-        
-      switch(satUsed)  // Število uporabljenih satelitov, prikazano z stolpci
-      {
-        case 3: GLCD_putgraphic(67, 0, 9, 1, sig1); break;
-        case 4: GLCD_putgraphic(67, 0, 9, 1, sig2); break;
-        case 5: GLCD_putgraphic(67, 0, 9, 1, sig3); break;
-        case 6: GLCD_putgraphic(67, 0, 9, 1, sig4); break;
-        case 7:
-        case 8:
-        case 9:
-        case 10:
-        case 11:
-        case 12: GLCD_putgraphic(68, 0, 9, 1, sig5); break;
-        default: GLCD_putgraphic(68, 0, 9, 1, sig0); break;
-      }
-      
-      switch(1)  // Battery status =) -- trenutno še ne dela animirano
-      {
-        case 1: GLCD_putgraphic(80, 0, 4, 1, bat3); break;
-      } 
-      
-      GLCD_gotoxy(0,2);              // Prikaz hitrosti
-      GLCD_putstring("v =  ");
-      GLCD_putstring(kmhSpeed);
-      
-      GLCD_gotoxy(0,3);              // Prikaz nadmorske višine
-      GLCD_putstring("h = ");
-      GLCD_putstring(visinaStr); 
-      
-      GLCD_gotoxy(0,4);              // Prikaz g.širine
-      GLCD_putstring(latitudeDeg);
-      
-      GLCD_gotoxy(0,5);              // Prikaz g.dolžine
-      GLCD_putstring(longitudeDeg);
-
-      GLCD_gotoxy(78,5);
-      mpr121_read(ELE0_TS);
-      GLCD_putch(mpr121_rx_buf[0]+64);      // @ not, A - 1, B - 2, D - 4, H - 8
-    }
-   
-    wait(300000);
     
-    if(gpsEndFlag)
+    if((T1TC-timeStart)>=osTimeSlice)   // Ko preteèe èasovna rezina
     {
-      readGpsData();
-      gpsEndFlag = 0;
-    } 
+      timeStart = T1TC;                 // Shrani si trenutni èas
+      
+      switch(i%5)                       // Opravila
+      {
+      case 0: mpr121read(); break;
+      case 1: 
+        if(gpsEndFlag)
+        {
+          readGpsData();
+          gpsEndFlag = 0;
+        } 
+        break;
+      case 2: mpr121read(); izracunStats(); break;
+      case 3: dispGps(); break;
+      case 4: mpr121read(); break;
+      }
+      
+      if(gpsFix > 1) firstFixOk = 1;
+      
+      i++;
+    }   
     
   }
   return 0;
 }
+
+/* Branje tipk I2C */
+void mpr121read()
+{
+  static int pressOld=0;
+  
+  mpr121_read(ELE0_TS);
+  touchPress = (int) mpr121_rx_buf[0];
+  
+  if(touchPress == pressOld);
+  else
+  {
+    pressOld = touchPress;
+    dispChange = 1;           // Potrebno brisanje ekrana, zaradi spremembe vsebine
+    switch(touchPress)                                                         // Premikaj se z tipkami po razliènih ekranih (dispState)
+    {
+      case 1: if(dispState == (max_dispStates - 1)); else dispState++; break;
+      case 2: if(dispState == 0); else dispState--; break;
+      case 4: break;
+      case 8: break;
+      case 15: break; //Troll :)
+    }
+  }
+}
+
+/* Izraèun statistike */
+void izracunStats()
+{
+  if(kmhSpeedNum > maxSpeed) maxSpeed = kmhSpeedNum;    // Max speed
+  if(visinaNum > maxAltitude) maxAltitude = visinaNum;  // Max višina
+  skupnaRazdalja += (kmhSpeedNum*10)/36;                // Èas 1sec, razdalja ~~ hitrost v m/s
+}
+
+/* Izpis/Izris podatkov na zaslon */
+void dispGps()
+{
+  if(dispChange == 1)
+  {
+    GLCD_clean_ddram();
+    dispChange = 0;
+  }
+  switch(dispState)
+  {
+    case 0: osnovniZaslon(); break;
+    case 1: grafVisina();    break;
+    case 2: grafHitrost();   break;
+    case 3: dispStats();     break;
+  }
+}
+
+/* Razliène konfiguracije na zaslonu */
+void osnovniZaslon()
+{
+  static int i=0;
+  
+  if(gpsFix == 1)
+  { 
+    switch(i%50)
+    {
+      case 0:  GLCD_clean_ddram(); GLCD_putgraphic(0, 1, 48, 5, space1);  break;
+      case 5:  GLCD_clean_ddram(); GLCD_putgraphic(9, 1, 48, 5, space1);  break;
+      case 10: GLCD_clean_ddram(); GLCD_putgraphic(18, 1, 48, 5, space1); break;
+      case 15: GLCD_clean_ddram(); GLCD_putgraphic(27, 1, 48, 5, space1); break;
+      case 20: GLCD_clean_ddram(); GLCD_putgraphic(36, 1, 48, 5, space1); break;
+      case 25: GLCD_clean_ddram(); GLCD_putgraphic(36, 1, 48, 5, space2); break;
+      case 30: GLCD_clean_ddram(); GLCD_putgraphic(27, 1, 48, 5, space2); break;
+      case 35: GLCD_clean_ddram(); GLCD_putgraphic(18, 1, 48, 5, space2); break;
+      case 40: GLCD_clean_ddram(); GLCD_putgraphic(9, 1, 48, 5, space2);  break;
+      case 45: GLCD_clean_ddram(); GLCD_putgraphic(0, 1, 48, 5, space2);  break;             
+    }
+    GLCD_gotoxy(0,0);
+    GLCD_putstring("Cakam na GPS.");
+    
+    i++;
+  }
+  else
+  {
+    if(i>0)
+    {
+      GLCD_clean_ddram();
+      i=0;
+    }
+    statusBar();
+    
+    GLCD_gotoxy(0,2);              // Prikaz hitrosti
+    GLCD_putstring("v =  ");
+    GLCD_putstring(kmhSpeed);
+    
+    GLCD_gotoxy(0,3);              // Prikaz nadmorske višine
+    GLCD_putstring("h = ");
+    GLCD_putstring(visinaStr); 
+    
+    GLCD_gotoxy(0,4);              // Prikaz g.širine
+    GLCD_putstring(latitudeDeg);
+    
+    GLCD_gotoxy(0,5);              // Prikaz g.dolžine
+    GLCD_putstring(longitudeDeg);
+  
+    GLCD_gotoxy(78,5);
+    GLCD_putch(mpr121_rx_buf[0]+64);      // @ not, A - 1, B - 2, D - 4, H - 8
+  }
+}
+
+void statusBar()
+{
+  GLCD_gotoxy(0,0);      // Time
+  
+  if(firstFixOk) GLCD_putstring(utcTime);
+  else GLCD_putstring("00:00:00");
+  
+  switch(gpsFix)   // Èe je GPS fix, prikaz 2D, 3D
+  {
+    case 1: GLCD_putgraphic(55, 0, 8, 1, fixno); break; // No fix
+    case 2: GLCD_putgraphic(55, 0, 8, 1, fix2D); break; // 2D fix
+    case 3: GLCD_putgraphic(55, 0, 8, 1, fix3D); break; // 3D fix
+  }
+    
+  switch(satUsed)  // Število uporabljenih satelitov, prikazano z stolpci
+  {
+    case 3: GLCD_putgraphic(67, 0, 9, 1, sig1); break;
+    case 4: GLCD_putgraphic(67, 0, 9, 1, sig2); break;
+    case 5: GLCD_putgraphic(67, 0, 9, 1, sig3); break;
+    case 6: GLCD_putgraphic(67, 0, 9, 1, sig4); break;
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12: GLCD_putgraphic(68, 0, 9, 1, sig5); break;
+    default: GLCD_putgraphic(68, 0, 9, 1, sig0); break;
+  }
+  
+  switch(1)  // Battery status =) -- trenutno še ne dela animirano
+  {
+    case 1: GLCD_putgraphic(80, 0, 4, 1, bat3); break;
+  }  
+}
+
+void grafVisina()
+{
+  statusBar();
+  GLCD_gotoxy(0,1);      // Time
+  GLCD_putstring("Visina");
+}
+
+void grafHitrost()
+{ 
+  statusBar();
+  GLCD_gotoxy(0,2);      // Time
+  GLCD_putstring("Hitrost");
+}
+
+void dispStats()
+{
+  char hitrost[10]  ="    km/h";
+  char visina[10]   ="     m";
+  char razdalja[10] ="       m";
+  
+  statusBar();
+  GLCD_gotoxy(0,2);      
+  GLCD_putstring("Statistika:");
+  
+  // Max hitrost
+    GLCD_gotoxy(0,3);      
+    if(maxSpeed>=100)
+    {
+      hitrost[0] = (char) ((maxSpeed / 100) + 48);
+      hitrost[1] = (char) ((maxSpeed-(maxSpeed/100)*100)/10 + 48);
+      hitrost[2] = (char) ((maxSpeed % 10) + 48);
+    }
+    else if(maxSpeed>=10)
+    {
+      hitrost[0] = ' ';
+      hitrost[1] = (char) ((maxSpeed-(maxSpeed/100)*100)/10 + 48);
+      hitrost[2] = (char) ((maxSpeed % 10) + 48);
+    }
+    else
+    {
+      hitrost[0] = ' ';
+      hitrost[1] = ' ';
+      hitrost[2] = (char) ((maxSpeed % 10) + 48);
+    }
+    GLCD_putstring("vmax= ");
+    GLCD_putstring(hitrost);
+    
+  // Max višina
+    GLCD_gotoxy(0,4);
+    
+    visina[0] = (char) ((maxAltitude / 1000) + 48);
+    visina[1] = (char) ((maxAltitude-(maxAltitude/1000)*1000)/100 + 48);
+    visina[2] = (char) ((maxAltitude % 100)/10 + 48);
+    visina[3] = (char) ((maxAltitude % 10) + 48);
+    
+    GLCD_putstring("hmax= ");
+    GLCD_putstring(visina);
+    
+  // Skupna razdalja
+    GLCD_gotoxy(0,5);
+
+    razdalja[0] = (char) ((skupnaRazdalja % 1000000)/100000 + 48);
+    razdalja[1] = (char) ((skupnaRazdalja % 100000)/10000 + 48);
+    razdalja[2] = (char) ((skupnaRazdalja % 10000)/1000 + 48);
+    razdalja[3] = (char) ((skupnaRazdalja % 1000)/100 + 48);
+    razdalja[4] = (char) ((skupnaRazdalja % 100)/10 + 48);
+    razdalja[5] = (char) ((skupnaRazdalja % 10) + 48);    
+    
+    GLCD_putstring("odo= ");
+    GLCD_putstring(razdalja);    
+    
+}
+
 
 /* Vzame znakovne nize iz GPS in shrani uporabne podatke v posamezne znakovne nize ter številène vrednosti */
 void readGpsData(void)
@@ -172,6 +358,7 @@ void readGpsData(void)
       default: i = 0;
     }
     i = (i*1852)/10000;             // Iz vozlov v km/h (x1.852), upoštevaj še eno decimalko.
+    kmhSpeedNum = i;
     if(i>=100)
     {
       kmhSpeed[0] = (char) ((i / 100) + 48);
@@ -194,7 +381,8 @@ void readGpsData(void)
   // Longitude (g.dolžina)
     longitudeDeg[0] = rmcStr[37];  // West/East
     longitudeDeg[1] = ' ';
-    longitudeDeg[2] = rmcStr[25];  // Degrees
+    if(rmcStr[25] == '0') longitudeDeg[2] = ' ';
+    else longitudeDeg[2] = rmcStr[25];  // Degrees
     longitudeDeg[3] = rmcStr[26];
     longitudeDeg[4] = rmcStr[27];
     longitudeDeg[5] = 123;         // °
