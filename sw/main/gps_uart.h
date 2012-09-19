@@ -6,6 +6,7 @@ extern unsigned char rmcStr[100];
 extern unsigned char ggaStr[100];
 extern unsigned char gsaStr[100];
 extern int gpsEndFlag;
+extern int sekundeOn;
 
 /* Function declaration */
 extern void uart0_read(void);

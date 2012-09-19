@@ -14,6 +14,7 @@ void readGpsData(void);
 void dispGps(void);
 void mpr121read(void);
 void izracunStats(void);
+void izracunGrafa(void);
 
 // Razlièni prikazi na ekranu
 void osnovniZaslon(void);
@@ -28,11 +29,13 @@ extern unsigned char rmcStr[100];
 extern unsigned char ggaStr[100];
 extern unsigned char gsaStr[100];
 extern int gpsEndFlag;
+extern int sekundeOn;   // St. sekund. Od vsakem koncu oddajanja GPS -> +1
 
 // Tipke
-int touchPress;
-int dispState=0;
-int dispChange=1;
+int touchPress;     // Pritisnjene tipke
+int dispState=0;    // Trenutno stanje prikaza
+int dispChange=1;   // Zastavica o spremembi zaslona za brisanje
+int dispChangeF=0;  // Zastavica o spremembi zaslona za posamezne funkcije prikaza
 
 // Sateliti dobljeni?
 int firstFixOk = 0;
@@ -52,6 +55,7 @@ char latitudeDeg[15];         // g.širina N dd°mm',mmmm
 char longitudeDeg[15];        // g.dolžina E ddd°mm',mmmm
 char visinaStr[10]="     m";  // Nadmorska višina (znakovni niz)
 int  visinaNum;               // Nadmorska višina (številka)
+
 
 
 /* ----- Main ----- */
@@ -77,7 +81,7 @@ int main()
           gpsEndFlag = 0;
         } 
         break;
-      case 2: mpr121read(); izracunStats(); break;
+      case 2: mpr121read(); izracunStats(); izracunGrafa(); break;
       case 3: dispGps(); break;
       case 4: mpr121read(); break;
       }
@@ -95,6 +99,7 @@ int main()
 void mpr121read()
 {
   static int pressOld=0;
+  int i;
   
   mpr121_read(ELE0_TS);
   touchPress = (int) mpr121_rx_buf[0];
@@ -109,7 +114,17 @@ void mpr121read()
       case 1: if(dispState == (max_dispStates - 1)); else dispState++; break;
       case 2: if(dispState == 0); else dispState--; break;
       case 4: break;
-      case 8: break;
+      case 8: if(dispState == 1)  // Graf visina reset
+                for(i=0;i<180;i++) grafVisinaData[i]=0;   
+              if(dispState == 2)  // Graf hitrost reset
+                for(i=0;i<180;i++) grafHitrostData[i]=0;
+              if(dispState == 3)  // Statistika reset
+              {
+                maxSpeed=0;
+                maxAltitude=0;
+                skupnaRazdalja=0;
+              }     
+              break;
       case 15: break; //Troll :)
     }
   }
@@ -118,9 +133,47 @@ void mpr121read()
 /* Izraèun statistike */
 void izracunStats()
 {
-  if(kmhSpeedNum > maxSpeed) maxSpeed = kmhSpeedNum;    // Max speed
-  if(visinaNum > maxAltitude) maxAltitude = visinaNum;  // Max višina
-  skupnaRazdalja += (kmhSpeedNum*10)/36;                // Èas 1sec, razdalja ~~ hitrost v m/s
+    if(kmhSpeedNum > maxSpeed) maxSpeed = kmhSpeedNum;    // Max speed
+    if(visinaNum > maxAltitude) maxAltitude = visinaNum;  // Max višina
+    skupnaRazdalja += (kmhSpeedNum*10)/36;                // Èas 1sec, razdalja ~~ hitrost v m/s
+}
+
+/* Zapis na graf */
+void izracunGrafa()
+{
+  int temp;
+  
+  if(sekundeOn%60 == 0)
+  {
+    
+   // Graf visine 
+    switch(visinaNum/334)      // Do 1000m.
+    {
+    case 0: temp = visinaNum*10 / 425;            // x/42 da dobimo iz 334 vrednosti ven 8 vrednosti
+            grafVisinaData[(sekundeOn%3600)/60 + 120] = 128 >> temp;  // Zapiši piko v pravi stolpec sestavljen iz 8 pik. 1 zašiftaš po višini
+            break;
+    case 1: temp = (visinaNum - 334)*10 / 425;
+            grafVisinaData[(sekundeOn%3600)/60 + 60] = 128 >> temp;   // Index zbirke = 0-59 (minut) --> /60, max 60min -> % 3600sec, druga vrsta --> +60
+            break;
+    case 2: temp = (visinaNum - 668)*10 / 425;
+            grafVisinaData[(sekundeOn%3600)/60] = 128 >> temp;
+            break;
+    }
+
+  // Graf hitrosti
+    switch(kmhSpeedNum/34)      // Do 100km/h.
+    {
+    case 0: temp = kmhSpeedNum*100 / 425;            // x/42 da dobimo iz 334 vrednosti ven 8 vrednosti
+            grafHitrostData[(sekundeOn%3600)/60 + 120] = 128 >> temp;  // Zapiši piko v pravi stolpec sestavljen iz 8 pik. 1 zašiftaš po višini
+            break;
+    case 1: temp = (kmhSpeedNum - 34)*100 / 425;
+            grafHitrostData[(sekundeOn%3600)/60 + 60] = 128 >> temp;   // Index zbirke = 0-59 (minut) --> /60, max 60min -> % 3600sec, druga vrsta --> +60
+            break;
+    case 2: temp = (kmhSpeedNum - 68)*100 / 425;
+            grafHitrostData[(sekundeOn%3600)/60] = 128 >> temp;
+            break;
+    }
+  }
 }
 
 /* Izpis/Izris podatkov na zaslon */
@@ -128,9 +181,11 @@ void dispGps()
 {
   if(dispChange == 1)
   {
+    dispChangeF = 1;
     GLCD_clean_ddram();
     dispChange = 0;
   }
+  if(touchPress == 15){ GLCD_putgraphic(16, 0, 52, 6, trololo);return;}
   switch(dispState)
   {
     case 0: osnovniZaslon(); break;
@@ -229,17 +284,31 @@ void statusBar()
 }
 
 void grafVisina()
-{
+{ 
   statusBar();
-  GLCD_gotoxy(0,1);      // Time
-  GLCD_putstring("Visina");
+  if(dispChangeF)      // Naslov in osi grafa pošlji samo enkrat
+  {
+    GLCD_gotoxy(0,1);                        
+    GLCD_putstring("Visina [m/min]");
+    GLCD_putgraphic(0, 2, 84, 4, grafVisinaTmp);
+    dispChangeF = 0;
+  }   
+  
+  GLCD_putgraphic(23, 2, 60, 3, grafVisinaData);
 }
 
 void grafHitrost()
 { 
   statusBar();
-  GLCD_gotoxy(0,2);      // Time
-  GLCD_putstring("Hitrost");
+  if(dispChangeF)      // Naslov in osi grafa pošlji samo enkrat
+  {
+    GLCD_gotoxy(0,1);      
+    GLCD_putstring("Hit. [kmh/min]");
+    GLCD_putgraphic(0, 2, 84, 4, grafHitrostTmp);
+    dispChangeF = 0;
+  }    
+
+  GLCD_putgraphic(23, 2, 60, 3, grafHitrostData);  
 }
 
 void dispStats()
@@ -249,11 +318,11 @@ void dispStats()
   char razdalja[10] ="       m";
   
   statusBar();
-  GLCD_gotoxy(0,2);      
+  GLCD_gotoxy(0,1);      
   GLCD_putstring("Statistika:");
   
   // Max hitrost
-    GLCD_gotoxy(0,3);      
+    GLCD_gotoxy(0,2);      
     if(maxSpeed>=100)
     {
       hitrost[0] = (char) ((maxSpeed / 100) + 48);
@@ -276,7 +345,7 @@ void dispStats()
     GLCD_putstring(hitrost);
     
   // Max višina
-    GLCD_gotoxy(0,4);
+    GLCD_gotoxy(0,3);
     
     visina[0] = (char) ((maxAltitude / 1000) + 48);
     visina[1] = (char) ((maxAltitude-(maxAltitude/1000)*1000)/100 + 48);
@@ -287,7 +356,7 @@ void dispStats()
     GLCD_putstring(visina);
     
   // Skupna razdalja
-    GLCD_gotoxy(0,5);
+    GLCD_gotoxy(0,4);
 
     razdalja[0] = (char) ((skupnaRazdalja % 1000000)/100000 + 48);
     razdalja[1] = (char) ((skupnaRazdalja % 100000)/10000 + 48);
