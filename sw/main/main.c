@@ -73,20 +73,20 @@ int main()
       
       switch(i%5)                       // Opravila
       {
-      case 0: mpr121read(); break;
-      case 1: 
-        if(gpsEndFlag)
-        {
-          readGpsData();
-          gpsEndFlag = 0;
-        } 
-        break;
-      case 2: mpr121read(); izracunStats(); izracunGrafa(); break;
-      case 3: dispGps(); break;
-      case 4: mpr121read(); break;
+        case 0: mpr121read(); break;
+        case 1: 
+          if(gpsEndFlag)
+          {
+            readGpsData();
+            gpsEndFlag = 0;
+          } 
+          break;
+        case 2: mpr121read(); izracunStats(); izracunGrafa(); break;
+        case 3: dispGps(); break;
+        case 4: mpr121read(); break;
       }
       
-      if(gpsFix > 1) firstFixOk = 1;
+      if(gpsFix > 1) firstFixOk = 1;    // Prvo doloèanje koordinat
       
       i++;
     }   
@@ -426,7 +426,7 @@ void readGpsData(void)
       case 2: i = (rmcStr[39]-48)*100 + (rmcStr[40]-48)*10 + (rmcStr[42]-48); break;    // Upoštevam samo eno decimalko.
       default: i = 0;
     }
-    i = (i*1852)/10000;             // Iz vozlov v km/h (x1.852), upoštevaj še eno decimalko.
+    i = (i*1852)/1000;             // Iz vozlov v km/h (x1.852), upoštevaj še eno decimalko.
     kmhSpeedNum = i;
     if(i>=100)
     {
